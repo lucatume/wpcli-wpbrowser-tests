@@ -10,4 +10,4 @@ require_once 'vendor/autoload.php';
 
 $scaffoldCommand = new Scaffold();
 
-WP_CLI::add_command( 'wpb-scaffold', [ $scaffoldCommand, 'help' ] );
+WP_CLI::add_command( 'wpb-scaffold', $scaffoldCommand );

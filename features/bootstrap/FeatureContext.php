@@ -1,12 +1,10 @@
 <?php
 
-use Behat\Behat\Context\ClosuredContextInterface,
-    Behat\Behat\Context\TranslatedContextInterface,
-    Behat\Behat\Context\BehatContext,
-    Behat\Behat\Event\SuiteEvent;
-
-use \WP_CLI\Process;
-use \WP_CLI\Utils;
+use Behat\Behat\Context\BehatContext;
+use Behat\Behat\Context\ClosuredContextInterface;
+use Behat\Behat\Event\SuiteEvent;
+use WP_CLI\Process;
+use WP_CLI\Utils;
 
 // Inside a community package
 if ( file_exists( __DIR__ . '/utils.php' ) ) {
@@ -17,7 +15,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
 		$composer = json_decode( file_get_contents( $project_composer ) );
 		if ( ! empty( $composer->autoload->files ) ) {
 			$contents = 'require:' . PHP_EOL;
-			foreach( $composer->autoload->files as $file ) {
+			foreach ( $composer->autoload->files as $file ) {
 				$contents .= '  - ' . dirname( dirname( dirname( __FILE__ ) ) ) . '/' . $file;
 			}
 			@mkdir( sys_get_temp_dir() . '/wp-cli-package-test/' );
@@ -33,6 +31,7 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
 	require_once __DIR__ . '/../../vendor/autoload.php';
 }
 
+
 /**
  * Features context.
  */
@@ -40,45 +39,87 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 	private static $cache_dir, $suite_cache_dir;
 
-	private static $db_settings = array(
+	private static $db_settings   = array(
 		'dbname' => 'wp_cli_test',
 		'dbuser' => 'wp_cli_test',
 		'dbpass' => 'password1',
 		'dbhost' => '127.0.0.1',
 	);
+	public         $variables     = array();
+	private        $running_procs = array();
 
-	private $running_procs = array();
+	/**
+	 * Initializes context.
+	 * Every scenario gets it's own context object.
+	 *
+	 * @param array $parameters context parameters (set them up through behat.yml)
+	 */
+	public function __construct( array $parameters ) {
+		$this->drop_db();
+		$this->set_cache_dir();
+		$this->variables['CORE_CONFIG_SETTINGS'] = Utils\assoc_args_to_str( self::$db_settings );
+	}
 
-	public $variables = array();
+	// We cache the results of `wp core download` to improve test performance
+	// Ideally, we'd cache at the HTTP layer for more reliable tests
+
+	public function drop_db() {
+		$dbname = self::$db_settings['dbname'];
+		self::run_sql( "DROP DATABASE IF EXISTS $dbname" );
+	}
+
+	private function set_cache_dir() {
+		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
+		$this->proc( Utils\esc_cmd( 'mkdir -p %s', $path ) )->run_check();
+		$this->variables['CACHE_DIR'] = $path;
+	}
+
+	private static function run_sql( $sql ) {
+		Utils\run_mysql_command( 'mysql --no-defaults', array(
+			'execute' => $sql,
+			'host'    => self::$db_settings['dbhost'],
+			'user'    => self::$db_settings['dbuser'],
+			'pass'    => self::$db_settings['dbpass'],
+		) );
+	}
+
+	public function proc( $command, $assoc_args = array(), $path = '' ) {
+		if ( ! empty( $assoc_args ) ) {
+			$command .= Utils\assoc_args_to_str( $assoc_args );
+		}
+
+		$env = self::get_process_env_variables();
+		if ( isset( $this->variables['SUITE_CACHE_DIR'] ) ) {
+			$env['WP_CLI_CACHE_DIR'] = $this->variables['SUITE_CACHE_DIR'];
+		}
+
+		if ( isset( $this->variables['RUN_DIR'] ) ) {
+			$cwd = "{$this->variables['RUN_DIR']}/{$path}";
+		} else {
+			$cwd = null;
+		}
+
+		return Process::create( $command, $cwd, $env );
+	}
 
 	/**
 	 * Get the environment variables required for launched `wp` processes
+	 *
 	 * @beforeSuite
 	 */
 	private static function get_process_env_variables() {
 		// Ensure we're using the expected `wp` binary
 		$bin_dir = getenv( 'WP_CLI_BIN_DIR' ) ?: realpath( __DIR__ . "/../../bin" );
-		$env = array(
-			'PATH' =>  $bin_dir . ':' . getenv( 'PATH' ),
+		$env     = array(
+			'PATH'      => $bin_dir . ':' . getenv( 'PATH' ),
 			'BEHAT_RUN' => 1,
-			'HOME' => '/tmp/wp-cli-home',
+			'HOME'      => '/tmp/wp-cli-home',
 		);
 		if ( $config_path = getenv( 'WP_CLI_CONFIG_PATH' ) ) {
 			$env['WP_CLI_CONFIG_PATH'] = $config_path;
 		}
+
 		return $env;
-	}
-
-	// We cache the results of `wp core download` to improve test performance
-	// Ideally, we'd cache at the HTTP layer for more reliable tests
-	private static function cache_wp_files() {
-		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test core-download-cache';
-
-		if ( is_readable( self::$cache_dir . '/wp-config-sample.php' ) )
-			return;
-
-		$cmd = Utils\esc_cmd( 'wp core download --force --path=%s', self::$cache_dir );
-		Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
 	}
 
 	/**
@@ -92,13 +133,32 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		self::cache_wp_files();
 	}
 
+	private static function cache_wp_files() {
+		self::$cache_dir = sys_get_temp_dir() . '/wp-cli-test core-download-cache';
+
+		if ( is_readable( self::$cache_dir . '/wp-config-sample.php' ) ) {
+			return;
+		}
+
+		$cmd = Utils\esc_cmd( 'wp core download --force --path=%s', self::$cache_dir );
+		Process::create( $cmd, null, self::get_process_env_variables() )->run_check();
+	}
+
 	/**
 	 * @AfterSuite
 	 */
 	public static function afterSuite( SuiteEvent $event ) {
 		if ( self::$suite_cache_dir ) {
-			Process::create( Utils\esc_cmd( 'rm -r %s', self::$suite_cache_dir ), null, self::get_process_env_variables() )->run();
+			Process::create( Utils\esc_cmd( 'rm -r %s', self::$suite_cache_dir ), null,
+				self::get_process_env_variables() )->run();
 		}
+	}
+
+	public static function create_cache_dir() {
+		self::$suite_cache_dir = sys_get_temp_dir() . '/' . uniqid( "wp-cli-test-suite-cache-", true );
+		mkdir( self::$suite_cache_dir );
+
+		return self::$suite_cache_dir;
 	}
 
 	/**
@@ -137,7 +197,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		foreach ( explode( PHP_EOL, $output ) as $line ) {
 			if ( preg_match( '/^\s*(\d+)\s+(\d+)/', $line, $matches ) ) {
 				$parent = $matches[1];
-				$child = $matches[2];
+				$child  = $matches[2];
 
 				if ( $parent == $master_pid ) {
 					if ( ! posix_kill( (int) $child, 9 ) ) {
@@ -152,24 +212,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
-	public static function create_cache_dir() {
-		self::$suite_cache_dir = sys_get_temp_dir() . '/' . uniqid( "wp-cli-test-suite-cache-", TRUE );
-		mkdir( self::$suite_cache_dir );
-		return self::$suite_cache_dir;
-	}
-
-	/**
-	 * Initializes context.
-	 * Every scenario gets it's own context object.
-	 *
-	 * @param array $parameters context parameters (set them up through behat.yml)
-	 */
-	public function __construct( array $parameters ) {
-		$this->drop_db();
-		$this->set_cache_dir();
-		$this->variables['CORE_CONFIG_SETTINGS'] = Utils\assoc_args_to_str( self::$db_settings );
-	}
-
 	public function getStepDefinitionResources() {
 		return glob( __DIR__ . '/../steps/*.php' );
 	}
@@ -182,75 +224,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		return preg_replace_callback( '/\{([A-Z_]+)\}/', array( $this, '_replace_var' ), $str );
 	}
 
-	private function _replace_var( $matches ) {
-		$cmd = $matches[0];
-
-		foreach ( array_slice( $matches, 1 ) as $key ) {
-			$cmd = str_replace( '{' . $key . '}', $this->variables[ $key ], $cmd );
-		}
-
-		return $cmd;
-	}
-
-	public function create_run_dir() {
-		if ( !isset( $this->variables['RUN_DIR'] ) ) {
-			$this->variables['RUN_DIR'] = sys_get_temp_dir() . '/' . uniqid( "wp-cli-test-run-", TRUE );
-			mkdir( $this->variables['RUN_DIR'] );
-		}
-	}
-
 	public function build_phar( $version = 'same' ) {
-		$this->variables['PHAR_PATH'] = $this->variables['RUN_DIR'] . '/' . uniqid( "wp-cli-build-", TRUE ) . '.phar';
+		$this->variables['PHAR_PATH'] = $this->variables['RUN_DIR'] . '/' . uniqid( "wp-cli-build-", true ) . '.phar';
 
-		$this->proc( Utils\esc_cmd(
-			'php -dphar.readonly=0 %1$s %2$s --version=%3$s && chmod +x %2$s',
-			__DIR__ . '/../../utils/make-phar.php',
-			$this->variables['PHAR_PATH'],
-			$version
-		) )->run_check();
-	}
-
-	private function set_cache_dir() {
-		$path = sys_get_temp_dir() . '/wp-cli-test-cache';
-		$this->proc( Utils\esc_cmd( 'mkdir -p %s', $path ) )->run_check();
-		$this->variables['CACHE_DIR'] = $path;
-	}
-
-	private static function run_sql( $sql ) {
-		Utils\run_mysql_command( 'mysql --no-defaults', array(
-			'execute' => $sql,
-			'host' => self::$db_settings['dbhost'],
-			'user' => self::$db_settings['dbuser'],
-			'pass' => self::$db_settings['dbpass'],
-		) );
-	}
-
-	public function create_db() {
-		$dbname = self::$db_settings['dbname'];
-		self::run_sql( "CREATE DATABASE IF NOT EXISTS $dbname" );
-	}
-
-	public function drop_db() {
-		$dbname = self::$db_settings['dbname'];
-		self::run_sql( "DROP DATABASE IF EXISTS $dbname" );
-	}
-
-	public function proc( $command, $assoc_args = array(), $path = '' ) {
-		if ( !empty( $assoc_args ) )
-			$command .= Utils\assoc_args_to_str( $assoc_args );
-
-		$env = self::get_process_env_variables();
-		if ( isset( $this->variables['SUITE_CACHE_DIR'] ) ) {
-			$env['WP_CLI_CACHE_DIR'] = $this->variables['SUITE_CACHE_DIR'];
-		}
-
-		if ( isset( $this->variables['RUN_DIR'] ) ) {
-			$cwd = "{$this->variables['RUN_DIR']}/{$path}";
-		} else {
-			$cwd = null;
-		}
-
-		return Process::create( $command, $cwd, $env );
+		$this->proc( Utils\esc_cmd( 'php -dphar.readonly=0 %1$s %2$s --version=%3$s && chmod +x %2$s',
+			__DIR__ . '/../../utils/make-phar.php', $this->variables['PHAR_PATH'], $version ) )->run_check();
 	}
 
 	/**
@@ -265,11 +243,11 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['RUN_DIR'], self::get_process_env_variables() );
 
-		sleep(1);
+		sleep( 1 );
 
 		$status = proc_get_status( $proc );
 
-		if ( !$status['running'] ) {
+		if ( ! $status['running'] ) {
 			throw new RuntimeException( stream_get_contents( $pipes[2] ) );
 		} else {
 			$this->running_procs[] = $proc;
@@ -284,6 +262,36 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$token = "/* That's all, stop editing!";
 
 		$wp_config_code = str_replace( $token, "$line\n\n$token", $wp_config_code );
+	}
+
+	public function install_wp( $subdir = '' ) {
+		$this->create_db();
+		$this->create_run_dir();
+		$this->download_wp( $subdir );
+
+		$this->create_config( $subdir );
+
+		$install_args = array(
+			'url'            => 'http://example.com',
+			'title'          => 'WP CLI Site',
+			'admin_user'     => 'admin',
+			'admin_email'    => 'admin@example.com',
+			'admin_password' => 'password1'
+		);
+
+		$this->proc( 'wp core install', $install_args, $subdir )->run_check();
+	}
+
+	public function create_db() {
+		$dbname = self::$db_settings['dbname'];
+		self::run_sql( "CREATE DATABASE IF NOT EXISTS $dbname" );
+	}
+
+	public function create_run_dir() {
+		if ( ! isset( $this->variables['RUN_DIR'] ) ) {
+			$this->variables['RUN_DIR'] = sys_get_temp_dir() . '/' . uniqid( "wp-cli-test-run-", true );
+			mkdir( $this->variables['RUN_DIR'] );
+		}
 	}
 
 	public function download_wp( $subdir = '' ) {
@@ -301,29 +309,48 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	public function create_config( $subdir = '' ) {
-		$params = self::$db_settings;
+		$params             = self::$db_settings;
 		$params['dbprefix'] = $subdir ?: 'wp_';
 
 		$params['skip-salts'] = true;
 		$this->proc( 'wp core config', $params, $subdir )->run_check();
 	}
 
-	public function install_wp( $subdir = '' ) {
-		$this->create_db();
-		$this->create_run_dir();
-		$this->download_wp( $subdir );
+	/**
+	 * @BeforeScenario @pathEnv
+	 */
+	public function backupPathEnvVar() {
+		$this->pathBackup = getenv( 'PATH' );
+	}
 
-		$this->create_config( $subdir );
+	/**
+	 * @AfterScenario @pathEnv
+	 */
+	public function restorePathEnvVar() {
+		putenv( 'PATH=' . $this->pathBackup );
+	}
 
-		$install_args = array(
-			'url' => 'http://example.com',
-			'title' => 'WP CLI Site',
-			'admin_user' => 'admin',
-			'admin_email' => 'admin@example.com',
-			'admin_password' => 'password1'
-		);
+	/**
+	 * @BeforeScenario @fakeComposer
+	 */
+	public function makeFakeComposerExecutable() {
+		chmod( $this->get_data_dir( 'composer' ), 111 );
+	}
 
-		$this->proc( 'wp core install', $install_args, $subdir )->run_check();
+	public function get_data_dir( $path = '' ) {
+		$dataDir = dirname( dirname( __FILE__ ) ) . '/_data';
+
+		return ! empty( $path ) ? $dataDir . '/' . ltrim( $path, '/' ) : $dataDir;
+	}
+
+	private function _replace_var( $matches ) {
+		$cmd = $matches[0];
+
+		foreach ( array_slice( $matches, 1 ) as $key ) {
+			$cmd = str_replace( '{' . $key . '}', $this->variables[ $key ], $cmd );
+		}
+
+		return $cmd;
 	}
 }
 
