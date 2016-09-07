@@ -3,6 +3,6 @@
 namespace tad\WPCLI\Exceptions;
 
 
-class FileCreationException {
+class FileCreationException extends  BaseException {
 
 }

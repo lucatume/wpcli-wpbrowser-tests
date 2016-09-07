@@ -128,30 +128,28 @@ $steps->Given( '/^a misconfigured WP_CONTENT_DIR constant directory$/', function
 
 $steps->Given( '/^the next command is called with the `(.+)` parameter$/', function ( $world, $parameter ) {
 	$world->variables['parameterName'] = $parameter;
-
-	$world->printDebug( "Next command will have the '{$parameter}' parameter set." );
-
 } );
 
-$steps->Given( '/^the value of the parameter is `(.+)` from data$/', function ( $world, $path ) {
+$steps->Given( '/^the value of the parameter is `(.+)`( from data)*$/', function ( $world, $value, $fromData = null ) {
 	if ( empty( $world->variables['parameterName'] ) ) {
 		throw new \Behat\Behat\Exception\UndefinedException( 'Parameter value is missing' );
 	}
-	$path = $world->get_data_dir( $path );
+	if ( ! empty( $fromData ) ) {
+		$value = $world->get_data_dir( $value );
 
-	if ( ! file_exists( $path ) ) {
-		throw new \Behat\Behat\Exception\ErrorException( 0, "File '{$path}' does not exist.", __FILE__, __LINE__ - 3 );
+		if ( ! file_exists( $value ) ) {
+			throw new \Behat\Behat\Exception\ErrorException( 0, "File '{$value}' does not exist.", __FILE__,
+				__LINE__ - 3 );
+		}
 	}
 
-	$toAppend = ' ' . $world->variables['parameterName'] . '=' . $path;
+	$toAppend = ' ' . $world->variables['parameterName'] . '="' . $value . '"';
 
 	if ( ! empty( $world->variables['appendParameter'] ) ) {
 		$world->variables['appendParameter'] .= $toAppend;
 	} else {
 		$world->variables['appendParameter'] = $toAppend;
 	}
-
-	$world->printDebug( "Next command will have '{$world->variables['appendParameter']}' appended." );
 
 	unset( $world->variables['parameterName'] );
 } );
@@ -160,8 +158,6 @@ $steps->Given( '/^the global \$PATH var includes the data dir$/', function ( $wo
 	$path    = getenv( 'PATH' );
 	$dataDir = $world->get_data_dir();
 	$newPath = empty( $path ) ? $dataDir : $dataDir . ':' . $path;
-
-	$world->printDebug( "PATH set to '{$newPath}'" );
 
 	putenv( 'PATH=' . $newPath );
 } );

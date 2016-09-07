@@ -3,6 +3,6 @@
 namespace tad\WPCLI\Exceptions;
 
 
-class BaseException {
+class BaseException extends \Exception {
 
 }

@@ -1,0 +1,16 @@
+{
+    "name": "lucatume/a-plugin",
+    "description": "Just a plugin",
+    "type": "wordpress-plugin",
+    "require-dev": {
+        "lucatume/wp-browser": "*"
+    },
+    "license": "GPL v2.0",
+    "authors": [
+        {
+            "name": "Luca Tumedei",
+            "email": "luca@theaveragedev.com"
+        }
+    ],
+    "require": {}
+}

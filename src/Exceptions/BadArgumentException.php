@@ -3,6 +3,6 @@
 namespace tad\WPCLI\Exceptions;
 
 
-class BadArgumentException {
+class BadArgumentException extends BaseException {
 
 }

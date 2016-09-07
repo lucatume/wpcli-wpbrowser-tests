@@ -352,5 +352,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		return $cmd;
 	}
+
+	/**
+	 * @BeforeScenario @cleanTemp
+	 */
+	public function cleanDataTempDir() {
+		recursiveRmdir( $this->get_data_dir( '/temp' ) );
+		mkdir( $this->get_data_dir( '/temp' ) );
+	}
 }
 

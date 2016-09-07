@@ -171,3 +171,31 @@ $steps->Then( '/^the (.+) (file|directory) should (exist|not exist|be:|contain:|
 				checkString( $contents, $expected, $action );
 		}
 	} );
+
+$steps->Then( '/^the file `(.+)` should exist in the `(.+)` folder in data$/', function ( $world, $file, $folder ) {
+	$path = $world->get_data_dir( trim( $folder, '/' ) . '/' . trim( $file, '/' ) );
+	if ( ! file_exists( $path ) ) {
+		throw new Exception( "Data folder '{$folder}' does not contain a '{$file}' file." );
+	}
+} );
+
+$steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$/', function (
+	$world, $format = null, $file, $folder, $string
+) {
+	$path = $world->get_data_dir( trim( $folder, '/' ) . '/' . trim( $file, '/' ) );
+	if ( ! file_exists( $path ) ) {
+		throw new Exception( "Data folder '{$folder}' does not contain a '{$file}' file." );
+	}
+
+	$contents = file_get_contents( $path );
+
+	$expected = $world->replace_variables( (string) $string );
+
+	switch ( strtolower( $format ) ) {
+		case 'json':
+			checkThatJsonStringContainsJsonString( $contents, $string );
+		default:
+			checkString( $contents, $expected, 'contain' );
+			break;
+	}
+} );

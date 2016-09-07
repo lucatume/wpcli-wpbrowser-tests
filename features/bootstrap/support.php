@@ -186,3 +186,18 @@ function checkThatYamlStringContainsYamlString( $actualYaml, $expectedYaml ) {
 	return compareContents( $expectedValue, $actualValue );
 }
 
+function recursiveRmdir($dir) {
+	if (is_dir($dir)) {
+		$objects = scandir($dir);
+		foreach ($objects as $object) {
+			if ($object != "." && $object != "..") {
+				if (is_dir($dir."/".$object))
+					recursiveRmdir( $dir . "/" . $object);
+				else
+					unlink($dir."/".$object);
+			}
+		}
+		rmdir($dir);
+	}
+}
+

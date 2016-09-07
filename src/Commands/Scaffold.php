@@ -3,7 +3,7 @@
 namespace tad\WPCLI\Commands;
 
 
-use tad\WPCLI\Exceptions\MissingRequirementException;
+use tad\WPCLI\Exceptions\BaseException;
 use tad\WPCLI\System\Composer;
 
 class Scaffold extends \WP_CLI_Command {
@@ -28,8 +28,29 @@ class Scaffold extends \WP_CLI_Command {
 	 */
 	protected $composer;
 
-	public function __construct( Composer $composer = null ) {
-		$this->composer = $composer ?: new Composer();
+	/**
+	 * @var PluginTests
+	 */
+	protected $pluginTests;
+
+	public function __construct( Composer $composer = null, PluginTests $pluginTests = null ) {
+		$this->composer    = $composer ?: new Composer();
+		$this->pluginTests = $pluginTests ?: new PluginTests();
+	}
+
+
+	public function __invoke( array $args = array(), array $assocArgs = array() ) {
+		$subcommand = ! empty( $args[0] ) ? $args[0] : false;
+		if ( ! $subcommand ) {
+			return $this->help();
+		}
+
+		switch ( $subcommand ) {
+			case 'plugin-tests':
+				return $this->pluginTests( $args, $assocArgs );
+			default:
+				return $this->help();
+		}
 	}
 
 	public function help() {
@@ -38,7 +59,7 @@ class Scaffold extends \WP_CLI_Command {
 	}
 
 	/**
-	 * @alias plugin-tests
+	 * @subcommand plugin-tests
 	 *
 	 * @param array $args
 	 * @param array $assocArgs
@@ -49,7 +70,8 @@ class Scaffold extends \WP_CLI_Command {
 
 		try {
 			$this->composer->ensureComposer( $this->assocArgs );
-		} catch ( MissingRequirementException $e ) {
+			$this->pluginTests->scaffold( $args, $assocArgs );
+		} catch ( BaseException $e ) {
 			if ( $this->castExceptionsToErrors ) {
 				\WP_CLI::error( $e->getMessage(), 0 );
 
