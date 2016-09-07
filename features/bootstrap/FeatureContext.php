@@ -337,6 +337,13 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		chmod( $this->get_data_dir( 'composer' ), 111 );
 	}
 
+	/**
+	 * @AfterScenario @fakeComposer
+	 */
+	public function revertFakeComposerExecutable() {
+		chmod( $this->get_data_dir( 'composer' ), 777 );
+	}
+
 	public function get_data_dir( $path = '' ) {
 		$dataDir = dirname( dirname( __FILE__ ) ) . '/_data';
 
