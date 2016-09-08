@@ -14,7 +14,7 @@ class FileTemplates {
     "require-dev": {
         "lucatume/wp-browser": "*"
     },
-    "license": "GPL v2.0",
+    "license": "GPL-3.0+",
     "authors": [
         {
             "name": "{{name}}",
