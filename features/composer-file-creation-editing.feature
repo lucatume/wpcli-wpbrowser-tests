@@ -1,4 +1,4 @@
-Feature: Test that a composer configuration file is either created or edited in the destination folder
+Feature: Test that a composer configuration file is created or in the destination folder
 
   Background:
     Given a WP install
@@ -73,7 +73,7 @@ Feature: Test that a composer configuration file is either created or edited in 
             "require": {}
         }
         """
-
+    @cleanTemp
     Scenario: it allows the user to override certain values only
       Given the next command is called with the `--dir` parameter
       Given the value of the parameter is `/temp` from data

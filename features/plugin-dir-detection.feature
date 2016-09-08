@@ -22,7 +22,7 @@ Feature: Test that the command will accept a custom destination or use the curre
     Scenario: if passed the path to a valid destination folder the command should use it
       Given the next command is called with the `--dry-run` parameter
       Given the next command is called with the `--dir` parameter
-      Given the value of the parameter is `/` from data
+      Given the value of the parameter is `/temp` from data
       When I run `wp wpb-scaffold plugin-tests`
       Then STDOUT should contain:
         """

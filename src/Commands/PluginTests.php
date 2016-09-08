@@ -68,10 +68,10 @@ class PluginTests extends \WP_CLI_Command {
 			return;
 		}
 
-		$composerJsonFile = $this->dir . '/composer.json';
+		$composerJsonFile = realpath($this->dir) . '/composer.json';
 
 		if ( file_exists( $composerJsonFile ) ) {
-			\WP_CLI::line( "The destination folder contains a 'composer.json' file, adding wp-browser as a dev dependency." );
+			\WP_CLI::line( "Existing 'composer.json' file will be updated." );
 		} else {
 			\WP_CLI::line("Creating '{$composerJsonFile}' file");
 			$created = file_put_contents( $composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $assocArgs ) );

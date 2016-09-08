@@ -151,7 +151,7 @@ $steps->Given( '/^the value of the parameter is `(.+)`( from data)*$/', function
 		$world->variables['appendParameter'] = $toAppend;
 	}
 
-	unset( $world->variables['parameterName'] );
+	$world->variables['parameterName'] = null;
 } );
 
 $steps->Given( '/^the global \$PATH var includes the data dir$/', function ( $world ) {
@@ -160,4 +160,19 @@ $steps->Given( '/^the global \$PATH var includes the data dir$/', function ( $wo
 	$newPath = empty( $path ) ? $dataDir : $dataDir . ':' . $path;
 
 	putenv( 'PATH=' . $newPath );
+} );
+
+$steps->Given( '/^the `(.+)` data folder contains the `(.+)` file with contents:$/', function (
+	$world, $folder, $file, $contents
+) {
+	$path = $world->get_data_dir( $folder );
+
+	if ( ! is_dir( $path ) ) {
+		throw new \Behat\Behat\Exception\ErrorException( 0, "Folder '{$path}' does not exist.", __FILE__,
+			__LINE__ - 3 );
+	}
+
+	$filePath = rtrim( $path, '/' ) . '/' . trim( $file, '/' );
+
+	file_put_contents( $filePath, $world->replace_variables( (string) $contents ) );
 } );

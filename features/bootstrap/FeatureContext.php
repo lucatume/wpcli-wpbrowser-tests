@@ -182,6 +182,9 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		foreach ( $this->running_procs as $proc ) {
 			self::terminate_proc( $proc );
 		}
+
+		$this->cleanParameters();
+		$this->cleanDataTempDir();
 	}
 
 	/**
@@ -342,6 +345,10 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public function revertFakeComposerExecutable() {
 		chmod( $this->get_data_dir( 'composer' ), 777 );
+	}
+
+	public function cleanParameters() {
+		$this->variables['appendParameter'] = null;
 	}
 
 	public function get_data_dir( $path = '' ) {
