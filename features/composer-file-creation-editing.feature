@@ -73,3 +73,34 @@ Feature: Test that a composer configuration file is either created or edited in 
             "require": {}
         }
         """
+
+    Scenario: it allows the user to override certain values only
+      Given the next command is called with the `--dir` parameter
+      Given the value of the parameter is `/temp` from data
+      Given the next command is called with the `--description` parameter
+      Given the value of the parameter is `Just a plugin`
+      Given the next command is called with the `--name` parameter
+      Given the value of the parameter is `Luca Tumedei`
+      Given the next command is called with the `--email` parameter
+      Given the value of the parameter is `luca@theaveragedev.com`
+      When I run `wp wpb-scaffold plugin-tests`
+      Then the file `composer.json` should exist in the `/temp` folder in data
+      Then the json file `composer.json` in the `/temp` data folder should contain:
+        """
+        {
+            "name": "acme/my-plugin",
+            "description": "Just a plugin",
+            "type": "wordpress-plugin",
+            "require-dev": {
+                "lucatume/wp-browser": "*"
+            },
+            "license": "GPL-3.0+",
+            "authors": [
+                {
+                    "name": "Luca Tumedei",
+                    "email": "luca@theaveragedev.com"
+                }
+            ],
+            "require": {}
+        }
+        """
