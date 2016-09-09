@@ -4,8 +4,9 @@ namespace tad\WPCLI\Commands;
 
 
 use tad\WPCLI\Exceptions\BadArgumentException;
-use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Exceptions\FileCreationException;
+use tad\WPCLI\Templates\FileTemplates;
+use tad\WPCLI\Utils\JsonFileHandler;
 
 class PluginTests extends \WP_CLI_Command {
 
@@ -28,14 +29,21 @@ class PluginTests extends \WP_CLI_Command {
 	 * @var string
 	 */
 	protected $dir;
+
 	/**
 	 * @var FileTemplates
 	 */
-	private $fileTemplates;
+	protected $fileTemplates;
+
+	/**
+	 * @var JsonFileHandler
+	 */
+	protected $jsonFileHandler;
 
 
-	public function __construct( FileTemplates $fileTemplates = null ) {
-		$this->fileTemplates = $fileTemplates ?: new FileTemplates();
+	public function __construct( FileTemplates $fileTemplates = null, JsonFileHandler $jsonFileHandler = null ) {
+		$this->fileTemplates   = $fileTemplates ?: new FileTemplates();
+		$this->jsonFileHandler = $jsonFileHandler ?: new JsonFileHandler();
 	}
 
 	/**
@@ -56,7 +64,9 @@ class PluginTests extends \WP_CLI_Command {
 			\WP_CLI::line( 'Plugin tests will be scaffolded in the current working folder.' );
 		} else {
 			if ( ! is_dir( $this->dir ) ) {
-				throw new BadArgumentException( "Destination folder '{$this->dir}' is not accessible or does not exist." );
+				throw new BadArgumentException(
+					"Destination folder '{$this->dir}' is not accessible or does not exist."
+				);
 			}
 
 			\WP_CLI::line( "Plugin tests will be scaffolded in the specified folder '{$this->dir}'" );
@@ -68,17 +78,28 @@ class PluginTests extends \WP_CLI_Command {
 			return;
 		}
 
-		$composerJsonFile = realpath($this->dir) . '/composer.json';
+		$composerJsonFile = realpath( $this->dir ) . '/composer.json';
 
 		if ( file_exists( $composerJsonFile ) ) {
-			\WP_CLI::line( "Existing 'composer.json' file will be updated." );
-		} else {
-			\WP_CLI::line("Creating '{$composerJsonFile}' file");
-			$created = file_put_contents( $composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $assocArgs ) );
-			if (false === $created) {
-				throw new FileCreationException("File '{$composerJsonFile}' creation failed");
+			\WP_CLI::log( "Existing 'composer.json' file will be updated." );
+			$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )->addPropertyValue(
+					'require-dev', 'lucatume/wp-browser', '*'
+				)->write();
+
+			if ( ! $wrote ) {
+				throw new FileCreationException( "Could not update existing 'composer.json' file." );
 			}
-			\WP_CLI::line( "New composer.json file created in '{$this->dir}'" );
+
+			\WP_CLI::success( "Existing 'composer.json' file was updated." );
+		} else {
+			\WP_CLI::log( "Creating '{$composerJsonFile}' file" );
+			$created = file_put_contents(
+				$composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $assocArgs )
+			);
+			if ( false === $created ) {
+				throw new FileCreationException( "File '{$composerJsonFile}' creation failed" );
+			}
+			\WP_CLI::success( "New composer.json file created in '{$this->dir}'" );
 		}
 	}
 
