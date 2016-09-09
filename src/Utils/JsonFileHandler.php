@@ -82,7 +82,7 @@ class JsonFileHandler {
 		if ( version_compare( PHP_VERSION, '5.4') >= 0) {
 			$contents = json_encode( $this->decodedContents, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		} else {
-			$contents = str_replace( '\/', '/', $this->json_readable_encode( $this->decodedContents ) );
+			$contents = str_replace( '\/', '/', $this->json_readable_encode( $this->decodedContents, 1 ) );
 		}
 
 
@@ -104,18 +104,9 @@ class JsonFileHandler {
 
 function json_readable_encode($in, $indent = 0, \Closure $_escape = null)
 {
-    if (__CLASS__ && isset($this))
-    {
-        $_myself = array($this, __FUNCTION__);
-    }
-    elseif (__CLASS__)
-    {
-        $_myself = array('self', __FUNCTION__);
-    }
-    else
-    {
-        $_myself = __FUNCTION__;
-    }
+    
+    $_myself = array($this, __FUNCTION__);
+    
 
     if (is_null($_escape))
     {
