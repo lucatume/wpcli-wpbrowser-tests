@@ -79,7 +79,7 @@ class JsonFileHandler {
 			return true;
 		}
 
-		if ( version_compare( PHP_VERSION, '5.4', '>=' ) ) {
+		if ( version_compare( PHP_VERSION, '5.4') >= 0) {
 			$contents = json_encode( $this->decodedContents, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		} else {
 			$contents = str_replace( '\/', '/', $this->json_readable_encode( $this->decodedContents ) );
