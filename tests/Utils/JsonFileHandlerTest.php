@@ -29,7 +29,7 @@ class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 		$file->setContent( '' );
 		$this->root->addChild( $file );
 
-		$this->expectException( FileContentsException::class );
+		$this->setExpectedException( FileContentsException::class );
 
 		$sut = $this->make_instance();
 		$sut->setFile( $this->root->url() . '/some.json' )->readFileContents();
@@ -51,7 +51,7 @@ class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 		$file->setContent( 'foo' );
 		$this->root->addChild( $file );
 
-		$this->expectException( FileBadFormatException::class );
+		$this->setExpectedException( FileBadFormatException::class );
 
 		$sut = $this->make_instance();
 		$sut->setFile( $this->root->url() . '/some.json' )->readFileContents();

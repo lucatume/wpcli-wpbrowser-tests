@@ -28,5 +28,5 @@ before_script:
   - bash bin/install-package-tests.sh
 
 script:
-    - ./vendor/bin/behat --strict
-    - if [[ ${TRAVIS_PHP_VERSION:0:3} != "5.3" ]]; then phpunit
+  - phpunit
+  - ./vendor/bin/behat --strict
