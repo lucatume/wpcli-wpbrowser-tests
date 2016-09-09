@@ -102,7 +102,7 @@ class JsonFileHandler {
     Licensed under the GNU AGPLv3
 */
 
-function json_readable_encode($in, $indent = 0, Closure $_escape = null)
+function json_readable_encode($in, $indent = 0, \Closure $_escape = null)
 {
     if (__CLASS__ && isset($this))
     {
