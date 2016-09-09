@@ -6,8 +6,6 @@ namespace tad\WPCLI\Utils;
 use org\bovigo\vfs\vfsStream;
 use org\bovigo\vfs\vfsStreamDirectory;
 use org\bovigo\vfs\vfsStreamFile;
-use tad\WPCLI\Exceptions\FileBadFormatException;
-use tad\WPCLI\Exceptions\FileContentsException;
 
 class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 
@@ -29,7 +27,7 @@ class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 		$file->setContent( '' );
 		$this->root->addChild( $file );
 
-		$this->setExpectedException( FileContentsException::class );
+		$this->setExpectedException( 'tad\WPCLI\Exceptions\FileContentsException' );
 
 		$sut = $this->make_instance();
 		$sut->setFile( $this->root->url() . '/some.json' )->readFileContents();
@@ -51,7 +49,7 @@ class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 		$file->setContent( 'foo' );
 		$this->root->addChild( $file );
 
-		$this->setExpectedException( FileBadFormatException::class );
+		$this->setExpectedException( 'tad\WPCLI\Exceptions\FileBadFormatException' );
 
 		$sut = $this->make_instance();
 		$sut->setFile( $this->root->url() . '/some.json' )->readFileContents();
