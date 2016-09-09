@@ -73,7 +73,7 @@ class JsonFileHandlerTest extends \PHPUnit_Framework_TestCase {
 
 		$expected        = new \stdClass();
 		$expected->prop1 = 'val1';
-		$expected->prop2 = [ 'foo' => 'bar' ];
+		$expected->prop2 = array( 'foo' => 'bar' );
 		$expected        = json_encode( $expected );
 		$this->assertJson( $file->getContent() );
 		$this->assertJsonStringEqualsJsonFile( $filePath, $expected );
