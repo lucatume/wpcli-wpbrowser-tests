@@ -122,6 +122,6 @@ JSON;
 	public function it_should_be_instantiatable() {
 		$sut = $this->make_instance();
 
-		$this->assertInstanceOf( JsonFileHandler::class, $sut );
+		$this->assertInstanceOf( 'tad\WPCLI\Utils\JsonFileHandler', $sut );
 	}
 }
