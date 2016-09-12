@@ -135,7 +135,7 @@ class JsonFileHandler {
 
 		$open  = is_array( $in ) ? '[' : '{';
 		$close = is_array( $in ) ? ']' : '}';
-		$out   = str_repeat( $tab, min( 1, $indent - 2 ) ) . $open . "\n" . $out;
+		$out   = str_repeat( $tab, max( 1, $indent - 2 ) ) . $open . "\n" . $out;
 		$out .= "\n" . str_repeat( $tab, $indent ) . $close;
 
 		return preg_replace( '/:\\s+(\\{|\\[)/uiUm', ': $1', $out );
