@@ -82,62 +82,88 @@ class JsonFileHandler {
 		if ( version_compare( PHP_VERSION, '5.4' ) >= 0 ) {
 			$contents = json_encode( $this->decodedContents, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
 		} else {
-			$contents = str_replace( '\/', '/', $this->json_readable_encode( $this->decodedContents, 0 ) );
+			$contents = str_replace( '\/', '/', $this->format( json_encode( $this->decodedContents ), true, true ) );
 		}
-
 
 		return (bool) file_put_contents( $this->file, $contents );
 	}
 
-
-	/**
-	 * Copyleft (C) 2008-2011 BohwaZ <http://bohwaz.net/>
-	 */
-	function json_readable_encode( $in, $indent = 0, \Closure $_escape = null ) {
-		if ( is_null( $_escape ) ) {
-			$_escape = function ( $str ) {
-				return str_replace(
-					array( '\\', '"', "\n", "\r", "\b", "\f", "\t", '/', '\\\\u' ),
-					array( '\\\\', '\\"', "\\n", "\\r", "\\b", "\\f", "\\t", '\\/', '\\u' ), $str
-				);
-			};
-		}
-
-		$out = '';
-		$tab = '    ';
-
-		foreach ( $in as $key => $value ) {
-			$elIndent = str_repeat( $tab, $indent + 1 );
-			$out .= $elIndent;
-
-			if ( ! is_array( $in ) ) {
-				$out .= "\"" . $_escape( (string) $key ) . "\": ";
+	// A mere copy of the Composer one
+	protected function format( $json, $unescapeUnicode, $unescapeSlashes ) {
+		$result      = '';
+		$pos         = 0;
+		$strLen      = strlen( $json );
+		$indentStr   = '    ';
+		$newLine     = "\n";
+		$outOfQuotes = true;
+		$buffer      = '';
+		$noescape    = true;
+		for ( $i = 0; $i < $strLen; $i ++ ) {
+			// Grab the next character in the string
+			$char = substr( $json, $i, 1 );
+			// Are we inside a quoted string?
+			if ( '"' === $char && $noescape ) {
+				$outOfQuotes = ! $outOfQuotes;
 			}
+			if ( ! $outOfQuotes ) {
+				$buffer .= $char;
+				$noescape = '\\' === $char ? ! $noescape : true;
+				continue;
+			} elseif ( '' !== $buffer ) {
+				if ( $unescapeSlashes ) {
+					$buffer = str_replace( '\\/', '/', $buffer );
+				}
+				if ( $unescapeUnicode && function_exists( 'mb_convert_encoding' ) ) {
+					// https://stackoverflow.com/questions/2934563/how-to-decode-unicode-escape-sequences-like-u00ed-to-proper-utf-8-encoded-cha
+					$buffer = preg_replace_callback(
+						'/(\\\\+)u([0-9a-f]{4})/i', function ( $match ) {
+						$l = strlen( $match[1] );
+						if ( $l % 2 ) {
+							return str_repeat( '\\', $l - 1 ) . mb_convert_encoding(
+								pack( 'H*', $match[2] ), 'UTF-8', 'UCS-2BE'
+							);
+						}
 
-			if ( is_object( $value ) || is_array( $value ) ) {
-				$out .= $this->json_readable_encode( $value, $indent + 1, $_escape );
-			} elseif ( is_bool( $value ) ) {
-				$out .= $value ? 'true' : 'false';
-			} elseif ( is_null( $value ) ) {
-				$out .= 'null';
-			} elseif ( is_string( $value ) ) {
-				$out .= "\"" . $_escape( $value ) . "\"";
-			} else {
-				$out .= $value;
+						return $match[0];
+					}, $buffer
+					);
+				}
+				$result .= $buffer . $char;
+				$buffer = '';
+				continue;
 			}
-
-			$out .= ",\n";
+			if ( ':' === $char ) {
+				// Add a space after the : character
+				$char .= ' ';
+			} elseif ( ( '}' === $char || ']' === $char ) ) {
+				$pos --;
+				$prevChar = substr( $json, $i - 1, 1 );
+				if ( '{' !== $prevChar && '[' !== $prevChar ) {
+					// If this character is the end of an element,
+					// output a new line and indent the next line
+					$result .= $newLine;
+					for ( $j = 0; $j < $pos; $j ++ ) {
+						$result .= $indentStr;
+					}
+				} else {
+					// Collapse empty {} and []
+					$result = rtrim( $result );
+				}
+			}
+			$result .= $char;
+			// If the last character was the beginning of an element,
+			// output a new line and indent the next line
+			if ( ',' === $char || '{' === $char || '[' === $char ) {
+				$result .= $newLine;
+				if ( '{' === $char || '[' === $char ) {
+					$pos ++;
+				}
+				for ( $j = 0; $j < $pos; $j ++ ) {
+					$result .= $indentStr;
+				}
+			}
 		}
 
-		if ( ! empty( $out ) ) {
-			$out = substr( $out, 0, - 2 );
-		}
-
-		$open  = is_array( $in ) ? '[' : '{';
-		$close = is_array( $in ) ? ']' : '}';
-		$out   = str_repeat( $tab, max( 1, $indent - 2 ) ) . $open . "\n" . $out;
-		$out .= "\n" . str_repeat( $tab, $indent ) . $close;
-
-		return preg_replace( '/:\\s+(\\{|\\[)/uiUm', ': $1', $out );
+		return $result;
 	}
 }
