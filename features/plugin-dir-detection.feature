@@ -6,7 +6,7 @@ Feature: Test that the command will accept a custom destination or use the curre
   Scenario: if not passed a --dir parameter or plugin argument the command should show an error message
     Given the next command is called with the `--dry-run` parameter
     When I run `wp wpb-scaffold plugin-tests`
-    Then the STDERR should not be empty
+    Then STDERR should not be empty
 
     Scenario: if passed the path to a folder that's not valid the command should fail
       Given the next command is called with the `--dry-run` parameter
