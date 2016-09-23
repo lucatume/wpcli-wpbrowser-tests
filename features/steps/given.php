@@ -177,12 +177,18 @@ $steps->Given( '/^the `(.+)` data folder contains the `(.+)` file with contents:
 	file_put_contents( $filePath, $world->replace_variables( (string) $contents ) );
 } );
 
-$steps->Given('/^the `(.+)` plugin folder exists$/', function($world, $folder) {
+$steps->Given('/^the \'([^\']*)\' plugin folder exists$/', function($world, $folder) {
 	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins';
 	mkdir( $rootDir . '/' . ltrim( $folder, '/' ), 0777, true );
 });
 
-$steps->Given('/^the `(.+)` plugin folder does not exist$/', function($world, $folder) {
+$steps->Given('/^the \'([^\']*)\' plugin folder does not exist$/', function($world, $folder) {
 	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins';
 	recursiveRmdir( $rootDir . '/' . ltrim( $folder, '/' ));
+});
+
+$steps->Given('/^the file \'([^\']*)\' in the \'([^\']*)\' plugin contains:$/', function($world, $file, $slug, $contents) {
+	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins/'  . $slug;
+	$contents = $world->replace_variables( (string) $contents );
+	file_put_contents($rootDir . '/' . ltrim($file,'/'),$contents);
 });

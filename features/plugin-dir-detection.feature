@@ -39,7 +39,7 @@ Feature: Test that the command will accept a custom destination or use the curre
 
     Scenario: if passed a plugin argument that's not valid the command should display an error
       Given the next command is called with the `--dry-run` parameter
-      Given the `some-plugin` plugin folder does not exist
+      Given the 'some-plugin' plugin folder does not exist
       When I run `wp wpb-scaffold plugin-tests some-plugin`
       Then STDERR should contain:
         """
@@ -48,7 +48,7 @@ Feature: Test that the command will accept a custom destination or use the curre
 
     Scenario: if passed a valid plugin argument the command should scaffold the tests in the plugin folder
       Given the next command is called with the `--dry-run` parameter
-      Given the `some-plugin` plugin folder exists
+      Given the 'some-plugin' plugin folder exists
       When I run `wp wpb-scaffold plugin-tests some-plugin`
       Then STDOUT should contain:
         """

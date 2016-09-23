@@ -199,3 +199,10 @@ $steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$
 			break;
 	}
 } );
+
+$steps->Then('/^the file `(.+)` in the `(.+)` plugin should contain:$/', function($world, $file,$slug, $expected) {
+	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins/'  . $slug;
+	$contents = file_get_contents($rootDir . '/' . ltrim($file,'/'));
+	$expected = $world->replace_variables( (string) $expected );
+	checkString( $contents, $expected, 'contain' );
+});
