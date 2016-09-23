@@ -5,6 +5,7 @@ namespace tad\WPCLI\Commands;
 
 use tad\WPCLI\Exceptions\BadArgumentException;
 use tad\WPCLI\Exceptions\FileCreationException;
+use tad\WPCLI\Exceptions\MissingRequiredArgumentException;
 use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Utils\JsonFileHandler;
 
@@ -56,22 +57,24 @@ class PluginTests extends \WP_CLI_Command {
 		$this->args      = $args;
 		$this->assocArgs = $assocArgs;
 
-		$this->dryRun = $this->getFlagArg( 'dry-run' );
-		$this->dir    = $this->getAssocArg( 'dir' );
+		$this->dryRun = isset( $assocArgs['dry-run'] );
+		$candidate    = '';
 
-		if ( false === $this->dir ) {
-			$this->dir = getcwd();
-			\WP_CLI::line( 'Plugin tests will be scaffolded in the current working folder.' );
+		if ( empty( $assocArgs['dir'] ) && empty( $args[1] ) ) {
+			throw new MissingRequiredArgumentException(
+				'Specify an existing plugin folder basename or a destination using the --dir parameter.'
+			);
+		} elseif ( ! empty( $assocArgs['dir'] ) ) {
+			$candidate = $assocArgs['dir'];
+			$this->ensureDir( $candidate );
+			\WP_CLI::line( "Scaffolding plugin tests in the folder '{$assocArgs['dir']}'" );
 		} else {
-			if ( ! is_dir( $this->dir ) ) {
-				throw new BadArgumentException(
-					"Destination folder '{$this->dir}' is not accessible or does not exist."
-				);
-			}
-
-			\WP_CLI::line( "Plugin tests will be scaffolded in the specified folder '{$this->dir}'" );
+			$candidate = WP_PLUGIN_DIR . '/' . $args[1];
+			$this->ensurePluginDir( $candidate );
+			\WP_CLI::line( "Scaffolding plugin tests in '{$args[1]}' folder" );
 		}
 
+		$this->dir = $candidate;
 		$this->dir = rtrim( $this->dir, '/' );
 
 		if ( $this->dryRun ) {
@@ -83,8 +86,8 @@ class PluginTests extends \WP_CLI_Command {
 		if ( file_exists( $composerJsonFile ) ) {
 			\WP_CLI::log( "Existing 'composer.json' file will be updated." );
 			$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )->addPropertyValue(
-					'require-dev', 'lucatume/wp-browser', '*'
-				)->write();
+				'require-dev', 'lucatume/wp-browser', '*'
+			)->write();
 
 			if ( ! $wrote ) {
 				throw new FileCreationException( "Could not update existing 'composer.json' file." );
@@ -103,20 +106,19 @@ class PluginTests extends \WP_CLI_Command {
 		}
 	}
 
-	/**
-	 * @param string $name
-	 * @param mixed  $compare
-	 */
-	protected function getFlagArg( $name ) {
-		return ! empty( $this->assocArgs[ $name ] ) ? true : false;
+	protected function ensureDir( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			throw new BadArgumentException(
+				"Invalid destination folder '{$dir}' specified."
+			);
+		}
 	}
 
-	/**
-	 * @param string $name
-	 *
-	 * @return mixed|bool
-	 */
-	private function getAssocArg( $name ) {
-		return ! empty( $this->assocArgs[ $name ] ) ? $this->assocArgs[ $name ] : false;
+	protected function ensurePluginDir( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			throw new BadArgumentException(
+				"Invalid plugin slug specified."
+			);
+		}
 	}
 }

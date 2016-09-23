@@ -43,7 +43,7 @@ $steps->Given( '/^a WP multisite (subdirectory|subdomain)?\s?install$/', functio
 	$world->install_wp();
 	$subdomains = ! empty( $type ) && 'subdomain' === $type ? 1 : 0;
 	$world->proc( 'wp core install-network', array( 'title' => 'WP CLI Network', 'subdomains' => $subdomains ) )
-	      ->run_check();
+	      ->run_check() ;
 } );
 
 $steps->Given( '/^these installed and active plugins:$/', function ( $world, $stream ) {
@@ -176,3 +176,13 @@ $steps->Given( '/^the `(.+)` data folder contains the `(.+)` file with contents:
 
 	file_put_contents( $filePath, $world->replace_variables( (string) $contents ) );
 } );
+
+$steps->Given('/^the `(.+)` plugin folder exists$/', function($world, $folder) {
+	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins';
+	mkdir( $rootDir . '/' . ltrim( $folder, '/' ), 0777, true );
+});
+
+$steps->Given('/^the `(.+)` plugin folder does not exist$/', function($world, $folder) {
+	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins';
+	recursiveRmdir( $rootDir . '/' . ltrim( $folder, '/' ));
+});

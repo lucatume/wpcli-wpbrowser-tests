@@ -18,6 +18,12 @@ WP_CLI::add_command( 'wpb-scaffold', new Scaffold(), array(
 			'multiple' => false,
 		),
 		array(
+			'type'     => 'positional',
+			'name'     => 'slug',
+			'optional' => true,
+			'multiple' => false,
+		),
+		array(
 			'type'     => 'assoc',
 			'name'     => 'dry-run',
 			'optional' => true,

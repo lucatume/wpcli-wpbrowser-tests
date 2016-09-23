@@ -6,6 +6,6 @@ Feature: Test that WPBrowser command exists and can help.
       When I run `wp wpb-scaffold help`
       Then STDOUT should contain:
       """
-      usage: wp wpb-scaffold plugin-tests
-         or: wp wpb-scaffold theme-tests
+      usage: wp wpb-scaffold plugin-tests my-plugin
+         or: wp wpb-scaffold theme-tests my-theme
       """

@@ -54,8 +54,8 @@ class Scaffold extends \WP_CLI_Command {
 	}
 
 	public function help() {
-		\WP_CLI::line( 'usage: wp wpb-scaffold plugin-tests' );
-		\WP_CLI::line( '   or: wp wpb-scaffold theme-tests' );
+		\WP_CLI::line( 'usage: wp wpb-scaffold plugin-tests my-plugin' );
+		\WP_CLI::line( '   or: wp wpb-scaffold theme-tests my-theme' );
 	}
 
 	/**
