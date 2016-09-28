@@ -26,6 +26,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
             "name": "acme/my-plugin",
             "description": "My plugin",
             "type": "wordpress-plugin",
+            "minimum-stability": "stable",
             "require-dev": {
                 "lucatume/wp-browser": "*"
             },
@@ -60,6 +61,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
             "name": "lucatume/a-plugin",
             "description": "Just a plugin",
             "type": "wordpress-plugin",
+            "minimum-stability": "stable",
             "require-dev": {
                 "lucatume/wp-browser": "*"
             },
@@ -91,6 +93,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
             "name": "acme/my-plugin",
             "description": "Just a plugin",
             "type": "wordpress-plugin",
+            "minimum-stability": "stable",
             "require-dev": {
                 "lucatume/wp-browser": "*"
             },

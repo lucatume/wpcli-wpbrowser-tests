@@ -200,9 +200,15 @@ $steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$
 	}
 } );
 
-$steps->Then('/^the file `(.+)` in the `(.+)` plugin should contain:$/', function($world, $file,$slug, $expected) {
-	$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins/'  . $slug;
-	$contents = file_get_contents($rootDir . '/' . ltrim($file,'/'));
+$steps->Then('/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function($world, $file,$slug, $expected) {
+	$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/'  . $slug;
+	$filePath = $rootDir . '/' . ltrim( $file, '/' );
+
+	if (!file_exists($filePath)) {
+		throw new Exception("File '{$file}' does not exist in the '{$slug}' plugin folder.")	;
+	}
+
+	$contents = file_get_contents( $filePath );
 	$expected = $world->replace_variables( (string) $expected );
 	checkString( $contents, $expected, 'contain' );
 });

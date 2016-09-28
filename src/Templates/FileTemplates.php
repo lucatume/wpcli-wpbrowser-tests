@@ -11,6 +11,7 @@ class FileTemplates {
     "name": "{{slug}}",
     "description": "{{description}}",
     "type": "wordpress-plugin",
+    "minimum-stability": "stable",
     "require-dev": {
         "lucatume/wp-browser": "*"
     },

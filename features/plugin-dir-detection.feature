@@ -30,7 +30,7 @@ Feature: Test that the command will accept a custom destination or use the curre
       Given the next command is called with the `--dry-run` parameter
       Given the next command is called with the `--dir` parameter
       Given the value of the parameter is `/temp` from data
-      Given the `some-plugin` plugin folder exists
+      Given the 'some-plugin' plugin folder exists
       When I run `wp wpb-scaffold plugin-tests some-plugin`
       Then STDOUT should contain:
         """
