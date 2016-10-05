@@ -56,26 +56,11 @@ class PluginTests extends \WP_CLI_Command {
 	public function scaffold( array $args, array $assocArgs ) {
 		$this->args      = $args;
 		$this->assocArgs = $assocArgs;
-
 		$this->dryRun = isset( $assocArgs['dry-run'] );
-		$candidate    = '';
 
-		if ( empty( $assocArgs['dir'] ) && empty( $args[1] ) ) {
-			throw new MissingRequiredArgumentException(
-				'Specify an existing plugin folder basename or a destination using the --dir parameter.'
-			);
-		} elseif ( ! empty( $assocArgs['dir'] ) ) {
-			$candidate = $assocArgs['dir'];
-			$this->ensureDir( $candidate );
-			\WP_CLI::line( "Scaffolding plugin tests in the folder '{$assocArgs['dir']}'" );
-		} else {
-			$candidate = WP_PLUGIN_DIR . '/' . $args[1];
-			$this->ensurePluginDir( $candidate );
-			\WP_CLI::line( "Scaffolding plugin tests in '{$args[1]}' folder" );
-		}
+		$targetDir = $this->getScaffoldTargetDir( $args, $assocArgs );
 
-		$this->dir = $candidate;
-		$this->dir = rtrim( $this->dir, '/' );
+		$this->setTargetDir( $targetDir );
 
 		if ( $this->dryRun ) {
 			return;
@@ -83,23 +68,42 @@ class PluginTests extends \WP_CLI_Command {
 
 		$this->scaffoldOrUpdateComposerFile( $assocArgs );
 
-		$this->promptForComposerUpdate();
-	}
+		$shouldGoOn = $this->promptForComposerUpdate();
 
-	protected function ensureDir( $dir ) {
-		if ( ! is_dir( $dir ) ) {
-			throw new BadArgumentException(
-				"Invalid destination folder '{$dir}' specified."
-			);
+		if ( ! $shouldGoOn ) {
+			$this->end();
 		}
 	}
 
-	protected function ensurePluginDir( $dir ) {
-		if ( ! is_dir( $dir ) ) {
-			throw new BadArgumentException(
-				"Invalid plugin slug specified."
-			);
+	/**
+	 * @param array $args
+	 * @param array $assocArgs
+	 *
+	 * @return array
+	 * @throws MissingRequiredArgumentException
+	 */
+	protected function getScaffoldTargetDir( array $args, array $assocArgs ) {
+		if ( empty( $assocArgs['dir'] ) && empty( $args[1] ) ) {
+			throw new MissingRequiredArgumentException( 'Specify an existing plugin folder basename or a destination using the --dir parameter.' );
+		} elseif ( ! empty( $assocArgs['dir'] ) ) {
+			$targetDir = $assocArgs['dir'];
+			$this->ensureDir( $targetDir );
+			\WP_CLI::line( "Scaffolding plugin tests in the folder '{$assocArgs['dir']}'" );
+		} else {
+			$targetDir = WP_PLUGIN_DIR . '/' . $args[1];
+			$this->ensurePluginDir( $targetDir );
+			\WP_CLI::line( "Scaffolding plugin tests in '{$args[1]}' folder" );
 		}
+
+		return $targetDir;
+	}
+
+	/**
+	 * @param $candidate
+	 */
+	protected function setTargetDir( $candidate ) {
+		$this->dir = $candidate;
+		$this->dir = rtrim( $this->dir, '/' );
 	}
 
 	/**
@@ -118,9 +122,24 @@ class PluginTests extends \WP_CLI_Command {
 	}
 
 	private function promptForComposerUpdate() {
-		$updateComposer = \cli\confirm( 'Do you want to update Composer dependencies now', true );
-		if ( ! $updateComposer ) {
-			$this->end();
+		return \cli\confirm( 'Do you want to update Composer dependencies now', true );
+	}
+
+	private function end() {
+		\cli\line( "\n\nAll done!" );
+
+		return 0;
+	}
+
+	protected function ensureDir( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			throw new BadArgumentException( "Invalid destination folder '{$dir}' specified." );
+		}
+	}
+
+	protected function ensurePluginDir( $dir ) {
+		if ( ! is_dir( $dir ) ) {
+			throw new BadArgumentException( "Invalid plugin slug specified." );
 		}
 	}
 
@@ -167,12 +186,6 @@ class PluginTests extends \WP_CLI_Command {
 			throw new FileCreationException( "File '{$composerJsonFile}' creation failed" );
 		}
 		\WP_CLI::success( "New composer.json file created in '{$this->dir}'" );
-	}
-
-	private function end() {
-		\cli\line( "\n\nAll done!" );
-
-		return 0;
 	}
 
 	protected function readPluginInformation() {
