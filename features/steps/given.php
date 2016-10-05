@@ -225,9 +225,9 @@ $steps->Given( '/^the value of the parameter is the \'([^\']*)\' plugin folder p
 
 $steps->Given( '/^I will answer \'([^\']*)\' to the \'([^\']*)\' question$/', function ( $world, $answer, $question ) {
 	if ( ! isset( $world->variables['input'] ) ) {
-		$world->variables['input'] = '';
+		$world->variables['input'] = array();
 	}
 
 	/** @var FeatureContext $world */
-	$world->variables['input'] .= $answer . "\n";
+	$world->variables['input'][] = $answer;
 } );
