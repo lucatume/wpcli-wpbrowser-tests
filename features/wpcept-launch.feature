@@ -5,7 +5,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
 
   @current
   Scenario: the command will end if the user wants to manually update composer dependencies
-    Given I will answer 'n' to the 'composer update' question
+    Given I will answer 'n' to the question
     When I run `wp scaffold plugin some-plugin --plugin_name="Some Plugin" --plugin_description="Description of the plugin." --plugin_author="Your Name" --plugin_author_uri="http://example.com"`
     When I run `wp wpb-scaffold plugin-tests some-plugin` with input
     Then STDOUT should contain:
