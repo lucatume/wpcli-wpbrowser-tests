@@ -223,7 +223,7 @@ $steps->Given( '/^the value of the parameter is the \'([^\']*)\' plugin folder p
 } );
 
 
-$steps->Given( '/^I will answer \'([^\']*)\' to the question$/', function ( $world, $answer, $question ) {
+$steps->Given( '/^I will answer \'([^\']*)\' to the question$/', function ( $world, $answer ) {
 	if ( ! isset( $world->variables['input'] ) ) {
 		$world->variables['input'] = array();
 	}
