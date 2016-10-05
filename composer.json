@@ -18,6 +18,7 @@
         "behat/behat": "~2.5",
         "wp-cli/wp-cli": "^0.23",
         "mikey179/vfsstream": "1.6.*",
-        "phpunit/phpunit": "4.8.*"
+        "phpunit/phpunit": "4.8.*",
+        "lucatume/function-mocker": "^1.1"
     }
 }

@@ -24,6 +24,7 @@ $steps->When( '/^I (run|try) `([^`]+)`$/', function ( $world, $mode, $cmd ) {
 
 		unset( $world->variables['appendParameter'] );
 	}
+
 	$world->result = invoke_proc( $world->proc( $cmd ), $mode );
 } );
 
@@ -44,4 +45,9 @@ $steps->When( '/^I (run|try) the previous command again$/', function ( $world, $
 $steps->When( '/^I (run|try) `([^`]+)` from data folder$/', function ( $world, $mode, $cmd ) {
 	$cmd           = $world->replace_variables( $cmd );
 	$world->result = invoke_proc( $world->proc( $cmd, array(), $world->get_data_dir() ), $mode );
+} );
+
+$steps->When( '/^I run `([^`]+)` with input$/', function ( $world, $cmd ) {
+	/** @var FeatureContext $world */
+	$world->result = $world->proc( $cmd )->run_with_input( $world->variables['input'] );
 } );

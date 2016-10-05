@@ -82,6 +82,8 @@ class PluginTests extends \WP_CLI_Command {
 		}
 
 		$this->scaffoldOrUpdateComposerFile( $assocArgs );
+
+		$this->promptForComposerUpdate();
 	}
 
 	protected function ensureDir( $dir ) {
@@ -112,6 +114,13 @@ class PluginTests extends \WP_CLI_Command {
 			$this->updateComposerFile( $composerJsonFile );
 		} else {
 			$this->createComposerFile( $assocArgs, $composerJsonFile );
+		}
+	}
+
+	private function promptForComposerUpdate() {
+		$updateComposer = \cli\confirm( 'Do you want to update Composer dependencies now', true );
+		if ( ! $updateComposer ) {
+			$this->end();
 		}
 	}
 
@@ -158,6 +167,12 @@ class PluginTests extends \WP_CLI_Command {
 			throw new FileCreationException( "File '{$composerJsonFile}' creation failed" );
 		}
 		\WP_CLI::success( "New composer.json file created in '{$this->dir}'" );
+	}
+
+	private function end() {
+		\cli\line( "\n\nAll done!" );
+
+		return 0;
 	}
 
 	protected function readPluginInformation() {

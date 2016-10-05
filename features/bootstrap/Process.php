@@ -7,10 +7,15 @@ namespace WP_CLI;
  */
 class Process {
 
+	private $command, $cwd, $env;
+
+	private function __construct() {
+	}
+
 	/**
 	 * @param string $command Command to execute.
-	 * @param string $cwd Directory to execute the command in.
-	 * @param array $env Environment variables to set when running the command.
+	 * @param string $cwd     Directory to execute the command in.
+	 * @param array  $env     Environment variables to set when running the command.
 	 */
 	public static function create( $command, $cwd = null, $env = array() ) {
 		$proc = new self;
@@ -22,16 +27,27 @@ class Process {
 		return $proc;
 	}
 
-	private $command, $cwd, $env;
+	/**
+	 * Run the command, but throw an Exception on error.
+	 *
+	 * @return ProcessRun
+	 */
+	public function run_check() {
+		$r = $this->run();
 
-	private function __construct() {}
+		if ( $r->return_code || ! empty( $r->STDERR ) ) {
+			throw new \RuntimeException( $r );
+		}
+
+		return $r;
+	}
 
 	/**
 	 * Run the command.
 	 *
 	 * @return ProcessRun
 	 */
-	public function run() {
+	public function run( array $descriptors = null ) {
 		$cwd = $this->cwd;
 
 		$descriptors = array(
@@ -49,30 +65,51 @@ class Process {
 		fclose( $pipes[2] );
 
 		return new ProcessRun( array(
-			'stdout' => $stdout,
-			'stderr' => $stderr,
+			'stdout'      => $stdout,
+			'stderr'      => $stderr,
 			'return_code' => proc_close( $proc ),
-			'command' => $this->command,
-			'cwd' => $cwd,
-			'env' => $this->env
+			'command'     => $this->command,
+			'cwd'         => $cwd,
+			'env'         => $this->env
 		) );
 	}
 
-	/**
-	 * Run the command, but throw an Exception on error.
-	 *
-	 * @return ProcessRun
-	 */
-	public function run_check() {
-		$r = $this->run();
+	public function run_with_input( $input ) {
+		$cwd = $this->cwd;
 
-		if ( $r->return_code || !empty( $r->STDERR ) ) {
+		$descriptors = array(
+			0 => array( 'pipe', 'r' ),
+			1 => array( 'pipe', 'w' ),
+			2 => array( 'pipe', 'w' ),
+		);
+
+		$proc = proc_open( $this->command, $descriptors, $pipes, $cwd, $this->env );
+
+		fwrite( $pipes[0], $input );
+
+		$stdout = stream_get_contents( $pipes[1] );
+		fclose( $pipes[1] );
+
+		$stderr = stream_get_contents( $pipes[2] );
+		fclose( $pipes[2] );
+
+		$r = new ProcessRun( array(
+			'stdout'      => $stdout,
+			'stderr'      => $stderr,
+			'return_code' => proc_close( $proc ),
+			'command'     => $this->command,
+			'cwd'         => $cwd,
+			'env'         => $this->env
+		) );
+
+		if ( $r->return_code || ! empty( $r->STDERR ) ) {
 			throw new \RuntimeException( $r );
 		}
 
 		return $r;
 	}
 }
+
 
 /**
  * Results of an executed command.
@@ -94,7 +131,7 @@ class ProcessRun {
 	 * @return string
 	 */
 	public function __toString() {
-		$out  = "$ $this->command\n";
+		$out = "$ $this->command\n";
 		$out .= "$this->stdout\n$this->stderr";
 		$out .= "cwd: $this->cwd\n";
 		$out .= "exit status: $this->return_code";

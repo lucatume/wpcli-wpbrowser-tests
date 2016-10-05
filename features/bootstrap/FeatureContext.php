@@ -37,8 +37,8 @@ if ( file_exists( __DIR__ . '/utils.php' ) ) {
  */
 class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
+	public static  $questions     = array();
 	private static $cache_dir, $suite_cache_dir;
-
 	private static $db_settings   = array(
 		'dbname' => 'wp_cli_test',
 		'dbuser' => 'wp_cli_test',
@@ -149,8 +149,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public static function afterSuite( SuiteEvent $event ) {
 		if ( self::$suite_cache_dir ) {
-			Process::create( Utils\esc_cmd( 'rm -r %s', self::$suite_cache_dir ), null,
-				self::get_process_env_variables() )->run();
+			Process::create( Utils\esc_cmd( 'rm -r %s', self::$suite_cache_dir ), null, self::get_process_env_variables() )->run();
 		}
 	}
 
@@ -215,6 +214,24 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		}
 	}
 
+	public function cleanParameters() {
+		$this->variables['appendParameter'] = null;
+	}
+
+	/**
+	 * @BeforeScenario @cleanTemp
+	 */
+	public function cleanDataTempDir() {
+		recursiveRmdir( $this->get_data_dir( '/temp' ) );
+		mkdir( $this->get_data_dir( '/temp' ) );
+	}
+
+	public function get_data_dir( $path = '' ) {
+		$dataDir = dirname( dirname( __FILE__ ) ) . '/_data';
+
+		return ! empty( $path ) ? $dataDir . '/' . ltrim( $path, '/' ) : $dataDir;
+	}
+
 	public function getStepDefinitionResources() {
 		return glob( __DIR__ . '/../steps/*.php' );
 	}
@@ -235,7 +252,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	/**
-	 * Start a background process. Will automatically be closed when the tests finish.
+	 * start a background process. will automatically be closed when the tests finish.
 	 */
 	public function background_proc( $cmd ) {
 		$descriptors = array(
@@ -244,14 +261,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 			2 => array( 'pipe', 'w' ),
 		);
 
-		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['RUN_DIR'], self::get_process_env_variables() );
+		$proc = proc_open( $cmd, $descriptors, $pipes, $this->variables['run_dir'], self::get_process_env_variables() );
 
 		sleep( 1 );
 
 		$status = proc_get_status( $proc );
 
 		if ( ! $status['running'] ) {
-			throw new RuntimeException( stream_get_contents( $pipes[2] ) );
+			throw new runtimeexception( stream_get_contents( $pipes[2] ) );
 		} else {
 			$this->running_procs[] = $proc;
 		}
@@ -347,14 +364,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		chmod( $this->get_data_dir( 'composer' ), 777 );
 	}
 
-	public function cleanParameters() {
-		$this->variables['appendParameter'] = null;
-	}
+	public function proc_with_input() {
 
-	public function get_data_dir( $path = '' ) {
-		$dataDir = dirname( dirname( __FILE__ ) ) . '/_data';
-
-		return ! empty( $path ) ? $dataDir . '/' . ltrim( $path, '/' ) : $dataDir;
 	}
 
 	private function _replace_var( $matches ) {
@@ -366,13 +377,4 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		return $cmd;
 	}
-
-	/**
-	 * @BeforeScenario @cleanTemp
-	 */
-	public function cleanDataTempDir() {
-		recursiveRmdir( $this->get_data_dir( '/temp' ) );
-		mkdir( $this->get_data_dir( '/temp' ) );
-	}
 }
-
