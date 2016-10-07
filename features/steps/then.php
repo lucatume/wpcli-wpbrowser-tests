@@ -180,7 +180,11 @@ $steps->Then( '/^the file `(.+)` should exist in the `(.+)` folder in data$/', f
 } );
 
 $steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$/', function (
-	$world, $format = null, $file, $folder, $string
+	$world,
+	$format = null,
+	$file,
+	$folder,
+	$string
 ) {
 	$path = $world->get_data_dir( trim( $folder, '/' ) . '/' . trim( $file, '/' ) );
 	if ( ! file_exists( $path ) ) {
@@ -200,15 +204,19 @@ $steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$
 	}
 } );
 
-$steps->Then('/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function($world, $file,$slug, $expected) {
-	$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/'  . $slug;
+$steps->Then( '/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function ( $world, $file, $slug, $expected ) {
+	$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/' . $slug;
 	$filePath = $rootDir . '/' . ltrim( $file, '/' );
 
-	if (!file_exists($filePath)) {
-		throw new Exception("File '{$file}' does not exist in the '{$slug}' plugin folder.")	;
+	if ( ! file_exists( $filePath ) ) {
+		throw new Exception( "File '{$file}' does not exist in the '{$slug}' plugin folder." );
 	}
 
 	$contents = file_get_contents( $filePath );
 	$expected = $world->replace_variables( (string) $expected );
 	checkString( $contents, $expected, 'contain' );
-});
+} );
+
+$steps->Then( '/^\'([^\']*)\' should have been called$/', function ( $world, $command ) {
+	checkString( trim( $world->result->stdout, "\n" ), 'Running mocked ' . $command, 'contain' );
+} );

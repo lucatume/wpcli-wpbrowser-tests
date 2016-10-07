@@ -8,6 +8,7 @@ use tad\WPCLI\Exceptions\FileCreationException;
 use tad\WPCLI\Exceptions\MissingRequiredArgumentException;
 use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Utils\JsonFileHandler;
+use WP_CLI as cli;
 
 class PluginTests extends \WP_CLI_Command {
 
@@ -41,6 +42,11 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected $jsonFileHandler;
 
+	/**
+	 * @var bool Whether the `composer.json` file was updated or created.
+	 */
+	protected $composerFileUpdatedOrCreated;
+
 
 	public function __construct( FileTemplates $fileTemplates = null, JsonFileHandler $jsonFileHandler = null ) {
 		$this->fileTemplates   = $fileTemplates ?: new FileTemplates();
@@ -56,7 +62,7 @@ class PluginTests extends \WP_CLI_Command {
 	public function scaffold( array $args, array $assocArgs ) {
 		$this->args      = $args;
 		$this->assocArgs = $assocArgs;
-		$this->dryRun = isset( $assocArgs['dry-run'] );
+		$this->dryRun    = isset( $assocArgs['dry-run'] );
 
 		$targetDir = $this->getScaffoldTargetDir( $args, $assocArgs );
 
@@ -68,11 +74,24 @@ class PluginTests extends \WP_CLI_Command {
 
 		$this->scaffoldOrUpdateComposerFile( $assocArgs );
 
-		$shouldGoOn = $this->promptForComposerUpdate();
-
-		if ( ! $shouldGoOn ) {
+		if ( ! ( $this->promptForComposerUpdate() ) ) {
+			$this->printComposerInstructions();
+			$this->printWpceptInstructions();
 			$this->end();
+
+			return 0;
 		}
+
+		$this->runComposerAction( $assocArgs );
+
+		if ( ! ( $this->promptForWpceptBootstrap() ) ) {
+			$this->printWpceptInstructions();
+			$this->end();
+
+			return 0;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -88,11 +107,11 @@ class PluginTests extends \WP_CLI_Command {
 		} elseif ( ! empty( $assocArgs['dir'] ) ) {
 			$targetDir = $assocArgs['dir'];
 			$this->ensureDir( $targetDir );
-			\WP_CLI::line( "Scaffolding plugin tests in the folder '{$assocArgs['dir']}'" );
+			cli::line( "Scaffolding plugin tests in the folder '{$assocArgs['dir']}'" );
 		} else {
 			$targetDir = WP_PLUGIN_DIR . '/' . $args[1];
 			$this->ensurePluginDir( $targetDir );
-			\WP_CLI::line( "Scaffolding plugin tests in '{$args[1]}' folder" );
+			cli::line( "Scaffolding plugin tests in '{$args[1]}' folder" );
 		}
 
 		return $targetDir;
@@ -116,17 +135,54 @@ class PluginTests extends \WP_CLI_Command {
 
 		if ( file_exists( $composerJsonFile ) ) {
 			$this->updateComposerFile( $composerJsonFile );
+			$this->composerFileUpdatedOrCreated = true;
 		} else {
 			$this->createComposerFile( $assocArgs, $composerJsonFile );
+			$this->composerFileUpdatedOrCreated = false;
 		}
 	}
 
 	private function promptForComposerUpdate() {
-		return \cli\confirm( 'Do you want to update Composer dependencies now', true );
+		$action = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
+
+		return \cli\confirm( 'Do you want to ' . $action . ' Composer dependencies now', true );
+	}
+
+	protected function printComposerInstructions() {
+		$updateMessage  = 'Run `composer update` from this folder to install or update wp-browser';
+		$installMessage = 'Run `composer install` from this folder to install wp-browser';
+		$message        = $this->composerFileUpdatedOrCreated ? $updateMessage : $installMessage;
+		cli::line( $message . "\n" );
+	}
+
+	protected function printWpceptInstructions() {
+		cli::line( "Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup\n" );
 	}
 
 	private function end() {
 		\cli\line( "\n\nAll done!" );
+
+		return 0;
+	}
+
+	/**
+	 * @param array $assocArgs
+	 */
+	protected function runComposerAction( array $assocArgs ) {
+		$action          = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
+		$composerCommand = sprintf( '%s %s -d=%s', $assocArgs['composer'], $action, $this->dir );
+		$env             = array( 'PATH' => getenv( 'PATH' ) );
+		$composerProcess = cli\Process::create( $composerCommand, $this->dir, $env );
+		/** @var cli\ProcessRun $composerProcessRunStatus */
+		$composerProcessRunStatus = $composerProcess->run();
+
+		if ( $composerProcessRunStatus->return_code || ! empty( $composerProcessRunStatus->stderr ) ) {
+			$this->outputSubProcessError( $composerCommand, $composerProcessRunStatus );
+
+			return 1;
+		}
+
+		$this->outputSubProcessOutput( $composerProcessRunStatus );
 
 		return 0;
 	}
@@ -158,16 +214,16 @@ class PluginTests extends \WP_CLI_Command {
 	 * @throws FileCreationException
 	 */
 	protected function updateComposerFile( $composerJsonFile ) {
-		\WP_CLI::log( "Existing 'composer.json' file will be updated." );
-		$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )->addPropertyValue(
-			'require-dev', 'lucatume/wp-browser', '*'
-		)->write();
+		cli::log( "Existing 'composer.json' file will be updated." );
+		$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )
+		                               ->addPropertyValue( 'require-dev', 'lucatume/wp-browser', '*' )
+		                               ->write();
 
 		if ( ! $wrote ) {
 			throw new FileCreationException( "Could not update existing 'composer.json' file." );
 		}
 
-		\WP_CLI::success( "Existing 'composer.json' file was updated." );
+		cli::success( "Existing 'composer.json' file was updated." );
 	}
 
 	/**
@@ -177,15 +233,29 @@ class PluginTests extends \WP_CLI_Command {
 	 * @throws FileCreationException
 	 */
 	protected function createComposerFile( array $assocArgs, $composerJsonFile ) {
-		\WP_CLI::log( "Creating '{$composerJsonFile}' file" );
+		cli::log( "Creating '{$composerJsonFile}' file" );
 		$composerFileArgs = array_merge( $this->readPluginInformation(), $assocArgs );
-		$created          = file_put_contents(
-			$composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $composerFileArgs )
-		);
+		$created          = file_put_contents( $composerJsonFile,
+			$this->fileTemplates->getComposerPluginConfig( $composerFileArgs ) );
 		if ( false === $created ) {
 			throw new FileCreationException( "File '{$composerJsonFile}' creation failed" );
 		}
-		\WP_CLI::success( "New composer.json file created in '{$this->dir}'" );
+		cli::success( "New composer.json file created in '{$this->dir}'" );
+	}
+
+	/**
+	 * @param string         $subprocessCommand
+	 * @param cli\ProcessRun $subProcessRunStatus
+	 */
+	protected function outputSubProcessError( $subprocessCommand, $subProcessRunStatus ) {
+		cli::error_multi_line( "Error while running '{$subprocessCommand}':'n\n" . $subProcessRunStatus );
+	}
+
+	/**
+	 * @param cli\ProcessRun $composerProcessRunStatus
+	 */
+	protected function outputSubProcessOutput( $composerProcessRunStatus ) {
+		echo $composerProcessRunStatus->stdout;
 	}
 
 	protected function readPluginInformation() {
@@ -237,5 +307,9 @@ class PluginTests extends \WP_CLI_Command {
 		}
 
 		return false;
+	}
+
+	protected function promptForWpceptBootstrap() {
+		return \cli\confirm( 'Do you want to run wp-browser interactive bootstrap now', true );
 	}
 }

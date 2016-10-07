@@ -69,7 +69,8 @@ class Scaffold extends \WP_CLI_Command {
 		$this->assocArgs = $assocArgs;
 
 		try {
-			$this->composer->ensureComposer( $this->assocArgs );
+			$composerPath          = $this->composer->ensureComposer( $this->assocArgs );
+			$assocArgs['composer'] = ! empty( $assocArgs['composer'] ) ?: $composerPath;
 			$this->pluginTests->scaffold( $args, $assocArgs );
 		} catch ( BaseException $e ) {
 			if ( $this->castExceptionsToErrors ) {

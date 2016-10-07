@@ -341,6 +341,8 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public function backupPathEnvVar() {
 		$this->pathBackup = getenv( 'PATH' );
+		$newPath          = 'PATH=' . $this->get_data_dir() . ':' . $this->pathBackup;
+		putenv( $newPath );
 	}
 
 	/**
@@ -348,24 +350,6 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	 */
 	public function restorePathEnvVar() {
 		putenv( 'PATH=' . $this->pathBackup );
-	}
-
-	/**
-	 * @BeforeScenario @fakeComposer
-	 */
-	public function makeFakeComposerExecutable() {
-		chmod( $this->get_data_dir( 'composer' ), 111 );
-	}
-
-	/**
-	 * @AfterScenario @fakeComposer
-	 */
-	public function revertFakeComposerExecutable() {
-		chmod( $this->get_data_dir( 'composer' ), 777 );
-	}
-
-	public function proc_with_input() {
-
 	}
 
 	private function _replace_var( $matches ) {

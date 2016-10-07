@@ -50,5 +50,6 @@ $steps->When( '/^I (run|try) `([^`]+)` from data folder$/', function ( $world, $
 $steps->When( '/^I run `([^`]+)` with input$/', function ( $world, $cmd ) {
 	/** @var FeatureContext $world */
 	$mockInput     = implode( "\n", $world->variables['input'] ) . "\n";
+
 	$world->result = $world->proc( $cmd )->run_with_input( $mockInput );
 } );

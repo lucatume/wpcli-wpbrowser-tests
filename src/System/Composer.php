@@ -9,10 +9,13 @@ class Composer {
 
 	public function ensureComposer( array $assocArgs ) {
 		if ( empty( $assocArgs['composer'] ) ) {
-			$this->ensureGlobalComposer();
-		} else {
-			$this->ensureComposerPath( $assocArgs );
+
+			return 'composer';
 		}
+
+		$this->ensureComposerPath( $assocArgs );
+
+		return $assocArgs['composer'];
 	}
 
 	protected function ensureGlobalComposer() {

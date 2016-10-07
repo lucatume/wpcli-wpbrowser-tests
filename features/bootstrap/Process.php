@@ -47,7 +47,7 @@ class Process {
 	 *
 	 * @return ProcessRun
 	 */
-	public function run( array $descriptors = null ) {
+	public function run() {
 		$cwd = $this->cwd;
 
 		$descriptors = array(

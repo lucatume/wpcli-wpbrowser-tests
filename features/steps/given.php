@@ -223,11 +223,25 @@ $steps->Given( '/^the value of the parameter is the \'([^\']*)\' plugin folder p
 } );
 
 
-$steps->Given( '/^I will answer \'([^\']*)\' to the question$/', function ( $world, $answer ) {
+$steps->Given( '/^I will answer \'([^\']*)\' to the \'([^\']*)\' question$/', function ( $world, $answer ) {
+	// question is not used; it has merely a representative function
 	if ( ! isset( $world->variables['input'] ) ) {
 		$world->variables['input'] = array();
 	}
 
 	/** @var FeatureContext $world */
 	$world->variables['input'][] = $answer;
+} );
+
+$steps->Given( '/^I run `composer ([^`]*)` in the \'([^\']*)\' plugin$/', function ( $world, $composerCommand, $pluginSlug ) {
+	$subdir = '/wp-content/plugins/' . $pluginSlug;
+	$dir    = $world->variables['RUN_DIR'] . $subdir;
+
+	if ( ! is_dir( $dir ) ) {
+		mkdir( $dir, 0777, true );
+	}
+
+	$cmd = 'composer ' . $composerCommand . ' -d=' . $dir;
+
+	$world->result = invoke_proc( $world->proc( $cmd, array() ), 'run' );
 } );

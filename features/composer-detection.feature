@@ -19,7 +19,7 @@ Feature: Test that composer existence and accessibility is dealt with.
         is not a valid Composer executable.
         """
 
-  @pathEnv @fakeComposer
+  @pathEnv
   Scenario: if global Composer command is not good it should fail
     Given the global $PATH var includes the data dir
     When I run `wp wpb-scaffold plugin-tests`
