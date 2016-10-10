@@ -123,7 +123,17 @@ $steps->Given( '/^a misconfigured WP_CONTENT_DIR constant directory$/', function
 	file_put_contents( $wp_config_path, $wp_config_code );
 } );
 
-$steps->Given( '/^the next command is called with the `(.+)` parameter$/', function ( $world, $parameter ) {
+$steps->Given( '/^the next command is called with the `(.+)` (parameter|option)$/', function ( $world, $parameter, $type ) {
+	if ( $type === 'option' ) {
+		if ( ! empty( $world->variables['appendParameter'] ) ) {
+			$world->variables['appendParameter'] .= ' ' . $parameter;
+		} else {
+			$world->variables['appendParameter'] = ' ' . $parameter;
+		}
+
+		return;
+	}
+
 	$world->variables['parameterName'] = $parameter;
 } );
 
@@ -131,6 +141,7 @@ $steps->Given( '/^the value of the parameter is `(.+)`( from data)*$/', function
 	if ( empty( $world->variables['parameterName'] ) ) {
 		throw new \Behat\Behat\Exception\UndefinedException( 'Parameter value is missing' );
 	}
+
 	if ( ! empty( $fromData ) ) {
 		$value = $world->get_data_dir( $value );
 
@@ -244,4 +255,11 @@ $steps->Given( '/^I run `composer ([^`]*)` in the \'([^\']*)\' plugin$/', functi
 	$cmd = 'composer ' . $composerCommand . ' -d=' . $dir;
 
 	$world->result = invoke_proc( $world->proc( $cmd, array() ), 'run' );
+} );
+
+$steps->Given( '/^I\'m working on the \'([^\']*)\' plugin$/', function ( $world, $slug ) {
+	$subdir = '/wp-content/plugins/' . $slug;
+	$dir    = $world->variables['RUN_DIR'] . $subdir;
+
+	$world->variables['cwd'] = $dir;
 } );

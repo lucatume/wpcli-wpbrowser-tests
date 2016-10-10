@@ -6,6 +6,8 @@ namespace tad\WPCLI\Commands;
 use tad\WPCLI\Exceptions\BadArgumentException;
 use tad\WPCLI\Exceptions\FileCreationException;
 use tad\WPCLI\Exceptions\MissingRequiredArgumentException;
+use tad\WPCLI\System\Composer;
+use tad\WPCLI\System\Process;
 use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Utils\JsonFileHandler;
 use WP_CLI as cli;
@@ -43,14 +45,29 @@ class PluginTests extends \WP_CLI_Command {
 	protected $jsonFileHandler;
 
 	/**
+	 * @var Composer
+	 */
+	protected $composer;
+
+	/**
 	 * @var bool Whether the `composer.json` file was updated or created.
 	 */
 	protected $composerFileUpdatedOrCreated;
 
+	/**
+	 * @var bool Whether the command should prompt the user to to install after the scaffold or not.
+	 */
+	protected $noInstall;
 
-	public function __construct( FileTemplates $fileTemplates = null, JsonFileHandler $jsonFileHandler = null ) {
+
+	public function __construct(
+		FileTemplates $fileTemplates = null,
+		JsonFileHandler $jsonFileHandler = null,
+		Composer $composer = null
+	) {
 		$this->fileTemplates   = $fileTemplates ?: new FileTemplates();
 		$this->jsonFileHandler = $jsonFileHandler ?: new JsonFileHandler();
+		$this->composer = $composer ?: new Composer();
 	}
 
 	/**
@@ -63,18 +80,19 @@ class PluginTests extends \WP_CLI_Command {
 		$this->args      = $args;
 		$this->assocArgs = $assocArgs;
 		$this->dryRun    = isset( $assocArgs['dry-run'] );
+		$this->noInstall = isset( $assocArgs['install'] ) && $assocArgs['install'] == false;
 
 		$targetDir = $this->getScaffoldTargetDir( $args, $assocArgs );
 
 		$this->setTargetDir( $targetDir );
 
 		if ( $this->dryRun ) {
-			return;
+			return 0;
 		}
 
 		$this->scaffoldOrUpdateComposerFile( $assocArgs );
 
-		if ( ! ( $this->promptForComposerUpdate() ) ) {
+		if ( $this->noInstall ) {
 			$this->printComposerInstructions();
 			$this->printWpceptInstructions();
 			$this->end();
@@ -82,16 +100,7 @@ class PluginTests extends \WP_CLI_Command {
 			return 0;
 		}
 
-		$this->runComposerAction( $assocArgs );
-
-		if ( ! ( $this->promptForWpceptBootstrap() ) ) {
-			$this->printWpceptInstructions();
-			$this->end();
-
-			return 0;
-		}
-
-		return 0;
+		return $this->runInteractiveMode( $assocArgs );
 	}
 
 	/**
@@ -142,12 +151,6 @@ class PluginTests extends \WP_CLI_Command {
 		}
 	}
 
-	private function promptForComposerUpdate() {
-		$action = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
-
-		return \cli\confirm( 'Do you want to ' . $action . ' Composer dependencies now', true );
-	}
-
 	protected function printComposerInstructions() {
 		$updateMessage  = 'Run `composer update` from this folder to install or update wp-browser';
 		$installMessage = 'Run `composer install` from this folder to install wp-browser';
@@ -159,30 +162,42 @@ class PluginTests extends \WP_CLI_Command {
 		cli::line( "Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup\n" );
 	}
 
-	private function end() {
-		\cli\line( "\n\nAll done!" );
+	private function end( $status = 0 ) {
+		if ( $status === 0 ) {
+			\cli\line( "\n\nAll done!" );
+		} else {
+			\cli\line( "\n\nSomething went wrong... Read the output above to debug." );
+		}
 
-		return 0;
+		return $status;
 	}
 
 	/**
 	 * @param array $assocArgs
+	 *
+	 * @return int
 	 */
-	protected function runComposerAction( array $assocArgs ) {
-		$action          = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
-		$composerCommand = sprintf( '%s %s -d=%s', $assocArgs['composer'], $action, $this->dir );
-		$env             = array( 'PATH' => getenv( 'PATH' ) );
-		$composerProcess = cli\Process::create( $composerCommand, $this->dir, $env );
-		/** @var cli\ProcessRun $composerProcessRunStatus */
-		$composerProcessRunStatus = $composerProcess->run();
+	protected function runInteractiveMode( array $assocArgs ) {
+		if ( ! ( $this->promptForComposerUpdate() ) ) {
+			$this->printComposerInstructions();
+			$this->printWpceptInstructions();
+			$this->end();
 
-		if ( $composerProcessRunStatus->return_code || ! empty( $composerProcessRunStatus->stderr ) ) {
-			$this->outputSubProcessError( $composerCommand, $composerProcessRunStatus );
-
-			return 1;
+			return 0;
 		}
 
-		$this->outputSubProcessOutput( $composerProcessRunStatus );
+		$this->runComposerAction( $assocArgs );
+
+		if ( ! ( $this->promptForWpceptBootstrap() ) ) {
+			$this->printWpceptInstructions();
+			$this->end();
+
+			return 0;
+		}
+
+		$wpceptExitStatus = $this->runWpcept( $assocArgs );
+
+		$this->end( $wpceptExitStatus );
 
 		return 0;
 	}
@@ -243,19 +258,59 @@ class PluginTests extends \WP_CLI_Command {
 		cli::success( "New composer.json file created in '{$this->dir}'" );
 	}
 
-	/**
-	 * @param string         $subprocessCommand
-	 * @param cli\ProcessRun $subProcessRunStatus
-	 */
-	protected function outputSubProcessError( $subprocessCommand, $subProcessRunStatus ) {
-		cli::error_multi_line( "Error while running '{$subprocessCommand}':'n\n" . $subProcessRunStatus );
+	private function promptForComposerUpdate() {
+		$action = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
+
+		return \cli\confirm( 'Do you want to ' . $action . ' Composer dependencies now', true );
 	}
 
 	/**
-	 * @param cli\ProcessRun $composerProcessRunStatus
+	 * @param array $assocArgs
 	 */
-	protected function outputSubProcessOutput( $composerProcessRunStatus ) {
-		echo $composerProcessRunStatus->stdout;
+	protected function runComposerAction( array $assocArgs ) {
+		$action          = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
+		$composerCommand = sprintf( '%s %s -d=%s', $assocArgs['composer'], $action, $this->dir );
+		$env             = array( 'PATH' => getenv( 'PATH' ) );
+		$composerProcess = cli\Process::create( $composerCommand, $this->dir, $env );
+		/** @var cli\ProcessRun $composerProcessRunStatus */
+		$composerProcessRunStatus = $composerProcess->run();
+
+		if ( $composerProcessRunStatus->return_code || ! empty( $composerProcessRunStatus->stderr ) ) {
+			$this->outputSubProcessError( $composerCommand, $composerProcessRunStatus );
+
+			return 1;
+		}
+
+		$this->outputSubProcessOutput( $composerProcessRunStatus );
+
+		return 0;
+	}
+
+	protected function promptForWpceptBootstrap() {
+		return \cli\confirm( "\nDo you want to run wp-browser interactive bootstrap now", true );
+	}
+
+	protected function runWpcept( $assocArgs ) {
+		$wpcept = $this->isWindows() ? 'wpcept.bat' : 'wpcept';
+
+		// if we are following through then we should control the path to the `vendor/bin` folder
+		$expectedLocation = $this->dir . '/vendor/bin/' . $wpcept;
+
+		if ( ! file_exists( $expectedLocation ) ) {
+			\cli\err( "WPBrowser bin 'wpcept' not found in the expected location '{$expectedLocation}'.\nRun it manually using the 'wpcept bootstrap --interactive' command." );
+
+			return - 1;
+		}
+
+		chdir( $this->dir );
+
+		// @todo pass what we know about the plugin here
+
+		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive';
+
+		passthru( $wpceptCommand, $return );
+
+		return $return;
 	}
 
 	protected function readPluginInformation() {
@@ -288,6 +343,29 @@ class PluginTests extends \WP_CLI_Command {
 		return $info;
 	}
 
+	/**
+	 * @param string         $subprocessCommand
+	 * @param cli\ProcessRun $subProcessRunStatus
+	 */
+	protected function outputSubProcessError( $subprocessCommand, $subProcessRunStatus ) {
+		cli::error_multi_line( "Error while running '{$subprocessCommand}':'n\n" . $subProcessRunStatus );
+	}
+
+	/**
+	 * @param cli\ProcessRun $composerProcessRunStatus
+	 */
+	protected function outputSubProcessOutput( $composerProcessRunStatus ) {
+		echo $composerProcessRunStatus->stdout;
+	}
+
+	private function isWindows() {
+		if ( strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN' ) {
+			return true;
+		}
+
+		return false;
+	}
+
 	protected function getPluginData() {
 		if ( ! function_exists( 'get_plugin_data' ) ) {
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -309,7 +387,17 @@ class PluginTests extends \WP_CLI_Command {
 		return false;
 	}
 
-	protected function promptForWpceptBootstrap() {
-		return \cli\confirm( 'Do you want to run wp-browser interactive bootstrap now', true );
+	/**
+	 * @param array $assocArgs
+	 *
+	 * @return int
+	 */
+	protected function runNonInteractiveMode( array $assocArgs ) {
+		$this->runComposerAction( $assocArgs );
+		$wpceptExitStatus = $this->runWpcept( $assocArgs );
+
+		$this->end( $wpceptExitStatus );
+
+		return 0;
 	}
 }

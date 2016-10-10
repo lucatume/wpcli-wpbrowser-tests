@@ -24,8 +24,13 @@ WP_CLI::add_command( 'wpb-scaffold', new Scaffold(), array(
 			'multiple' => false,
 		),
 		array(
-			'type'     => 'assoc',
+			'type'     => 'flag',
 			'name'     => 'dry-run',
+			'optional' => true,
+		),
+		array(
+			'type'     => 'flag',
+			'name'     => 'install',
 			'optional' => true,
 		),
 		array(

@@ -3,8 +3,9 @@ Feature: Test that a composer configuration file is created or in the destinatio
   Background:
     Given a WP install
 
-  @cleanTemp
+  @cleanTemp @current
   Scenario: if not found a composer configuration file is created
+    Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter
     Given the value of the parameter is `/temp` from data
     When I run `wp wpb-scaffold plugin-tests`
@@ -16,6 +17,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
 
   @cleanTemp
   Scenario: created composer configuration file should use default values
+    Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter
     Given the value of the parameter is `/temp` from data
     When I run `wp wpb-scaffold plugin-tests`
@@ -43,6 +45,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
 
   @cleanTemp
   Scenario: created composer configuration file should contain specified values
+    Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter
     Given the value of the parameter is `/temp` from data
     Given the next command is called with the `--slug` parameter
@@ -77,6 +80,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
         """
     @cleanTemp
     Scenario: it allows the user to override certain values only
+      Given the next command is called with the `--no-install` option
       Given the next command is called with the `--dir` parameter
       Given the value of the parameter is `/temp` from data
       Given the next command is called with the `--description` parameter

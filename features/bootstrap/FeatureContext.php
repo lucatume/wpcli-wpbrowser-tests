@@ -352,6 +352,68 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		putenv( 'PATH=' . $this->pathBackup );
 	}
 
+	/**
+	 * @beforeStep @mockWpcept
+	 */
+	public function createMockWpcept() {
+		if ( empty( $this->variables['cwd'] ) || ! empty( $this->variables['wpceptMocked'] ) ) {
+			return;
+		}
+
+		$cwd = $this->variables['cwd'];
+
+		$source = $this->get_data_dir( 'mockVendorStructure' );
+
+		$this->proc( Utils\esc_cmd( "cp -r %s/* %s", $source, $cwd ) )->run_check();
+
+		if ( ! file_exists( $cwd . '/vendor/bin/wpcept' ) ) {
+			throw new RuntimeException( "Could not create mock wpcept file in '{$cwd}'" );
+		}
+
+		$this->variables['wpceptMocked'] = true;
+	}
+
+	/**
+	 * @afterScenario @mockWpcept
+	 */
+	public function unlinkMockWpcept() {
+		if ( empty( $this->variables['wpceptMocked'] ) ) {
+			return;
+		}
+
+		$path = $this->variables['cwd'] . '/vendor/bin/wpcept';
+
+		if ( file_exists( $path ) ) {
+			if ( ! unlink( $path ) ) {
+				throw new RuntimeException( "Could not unlink mock wpcept file at '{$path}'" );
+			}
+		}
+	}
+
+	/**
+	 * @beforeScenario @badComposer
+	 */
+	public function mockBadComposer() {
+		$composerFile     = $this->get_data_dir( 'composer' );
+		$badComposerFile  = $this->get_data_dir( 'badComposer' );
+		$tempComposerFile = $this->get_data_dir( 'tempComposer' );
+
+		rename( $composerFile, $tempComposerFile );
+		rename( $badComposerFile, $composerFile );
+	}
+
+	/**
+	 * @afterScenario @badComposer
+	 */
+	public function restoreFakeComposer() {
+		$composerFile     = $this->get_data_dir( 'composer' );
+		$badComposerFile  = $this->get_data_dir( 'badComposer' );
+		$tempComposerFile = $this->get_data_dir( 'tempComposer' );
+
+		rename( $composerFile, $badComposerFile );
+		rename( $tempComposerFile, $composerFile );
+	}
+
 	private function _replace_var( $matches ) {
 		$cmd = $matches[0];
 

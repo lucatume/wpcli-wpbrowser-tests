@@ -53,3 +53,4 @@ $steps->When( '/^I run `([^`]+)` with input$/', function ( $world, $cmd ) {
 
 	$world->result = $world->proc( $cmd )->run_with_input( $mockInput );
 } );
+

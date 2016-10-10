@@ -5,6 +5,7 @@ Feature: Test that a composer configuration file is updates in the destination f
     Given a WP install
 
   Scenario: if a Composer configuration file is found in the destination folder it will be updated
+    Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter
     Given the value of the parameter is `/temp` from data
     Given the `/temp` data folder contains the `composer.json` file with contents:
@@ -29,6 +30,7 @@ Feature: Test that a composer configuration file is updates in the destination f
       """
 
   Scenario: if a Composer configuration file is found then the file will be updated
+    Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter
     Given the value of the parameter is `/temp` from data
     Given the `/temp` data folder contains the `composer.json` file with contents:

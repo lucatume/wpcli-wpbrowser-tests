@@ -6,7 +6,7 @@ Feature: Test that the plugin tests bootstrap command will read the target plugi
 
   Scenario: if not passed meta information the command will read the information from the plugin header
     When I run `wp scaffold plugin some-plugin --plugin_name="Some Plugin" --plugin_description="Description of the plugin." --plugin_author="Your Name" --plugin_author_uri="http://example.com"`
-    When I run `wp wpb-scaffold plugin-tests some-plugin`
+    When I run `wp wpb-scaffold plugin-tests some-plugin --no-install`
     Then the file 'composer.json' in the 'some-plugin' plugin should contain:
         """
         {
@@ -30,7 +30,7 @@ Feature: Test that the plugin tests bootstrap command will read the target plugi
 
   Scenario: if passed meta information the command will use that in place of the information in the plugin header
     When I run `wp scaffold plugin some-plugin --plugin_name="Some Plugin" --plugin_description="Description of the plugin." --plugin_author="Your Name" --plugin_author_uri="http://example.com"`
-    When I run `wp wpb-scaffold plugin-tests some-plugin --slug="someone/some-project" --name="John Doe" --description="Some Doe plugin" --email="doe@doe.com"`
+    When I run `wp wpb-scaffold plugin-tests some-plugin --no-install --slug="someone/some-project" --name="John Doe" --description="Some Doe plugin" --email="doe@doe.com"`
     Then the file 'composer.json' in the 'some-plugin' plugin should contain:
         """
         {
@@ -54,7 +54,7 @@ Feature: Test that the plugin tests bootstrap command will read the target plugi
 
   Scenario: if passed meta incomplete meta information the command will merge that with the information in the plugin header
     When I run `wp scaffold plugin some-plugin --plugin_name="Some Plugin" --plugin_description="Description of the plugin." --plugin_author="Your Name" --plugin_author_uri="http://example.com"`
-    When I run `wp wpb-scaffold plugin-tests some-plugin --slug="someone/some-project" --name="John Doe"`
+    When I run `wp wpb-scaffold plugin-tests some-plugin --no-install --slug="someone/some-project" --name="John Doe"`
     Then the file 'composer.json' in the 'some-plugin' plugin should contain:
         """
         {
