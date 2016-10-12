@@ -305,7 +305,7 @@ class PluginTests extends \WP_CLI_Command {
 		chdir( $this->dir );
 
 		/** @noinspection PhpUndefinedVariableInspection */
-		$arguments = [
+		$arguments = array(
 			'--dbHost=' . DB_HOST,
 			'--dbName=' . DB_NAME,
 			'--dbUser=' . DB_USER,
@@ -315,7 +315,7 @@ class PluginTests extends \WP_CLI_Command {
 			'--wpRootFolder=' . ABSPATH,
 			'--adminPath=' . ABSPATH . '/wp-admin',
 			'--plugins=' . basename( $this->dir )
-		];
+		);
 
 		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive' . ' ' . implode( ' ', $arguments );
 
