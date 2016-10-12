@@ -7,7 +7,6 @@ use tad\WPCLI\Exceptions\BadArgumentException;
 use tad\WPCLI\Exceptions\FileCreationException;
 use tad\WPCLI\Exceptions\MissingRequiredArgumentException;
 use tad\WPCLI\System\Composer;
-use tad\WPCLI\System\Process;
 use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Utils\JsonFileHandler;
 use WP_CLI as cli;
@@ -195,7 +194,7 @@ class PluginTests extends \WP_CLI_Command {
 			return 0;
 		}
 
-		$wpceptExitStatus = $this->runWpcept( $assocArgs );
+		$wpceptExitStatus = $this->runWpcept();
 
 		$this->end( $wpceptExitStatus );
 
@@ -275,6 +274,7 @@ class PluginTests extends \WP_CLI_Command {
 		/** @var cli\ProcessRun $composerProcessRunStatus */
 		$composerProcessRunStatus = $composerProcess->run();
 
+		/** @noinspection PhpUndefinedFieldInspection */
 		if ( $composerProcessRunStatus->return_code || ! empty( $composerProcessRunStatus->stderr ) ) {
 			$this->outputSubProcessError( $composerCommand, $composerProcessRunStatus );
 
@@ -290,7 +290,7 @@ class PluginTests extends \WP_CLI_Command {
 		return \cli\confirm( "\nDo you want to run wp-browser interactive bootstrap now", true );
 	}
 
-	protected function runWpcept( $assocArgs ) {
+	protected function runWpcept() {
 		$wpcept = $this->isWindows() ? 'wpcept.bat' : 'wpcept';
 
 		// if we are following through then we should control the path to the `vendor/bin` folder
@@ -304,9 +304,20 @@ class PluginTests extends \WP_CLI_Command {
 
 		chdir( $this->dir );
 
-		// @todo pass what we know about the plugin here
+		/** @noinspection PhpUndefinedVariableInspection */
+		$arguments = [
+			'--dbHost=' . DB_HOST,
+			'--dbName=' . DB_NAME,
+			'--dbUser=' . DB_USER,
+			'--dbPassword=' . DB_PASSWORD,
+			'--tablePrefix=' . $table_prefix,
+			'--url=' . home_url(),
+			'--wpRootFolder=' . ABSPATH,
+			'--adminPath=' . ABSPATH . '/wp-admin',
+			'--plugins=' . basename( $this->dir )
+		];
 
-		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive';
+		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive' . ' ' . implode( ' ', $arguments );
 
 		passthru( $wpceptCommand, $return );
 
@@ -355,6 +366,7 @@ class PluginTests extends \WP_CLI_Command {
 	 * @param cli\ProcessRun $composerProcessRunStatus
 	 */
 	protected function outputSubProcessOutput( $composerProcessRunStatus ) {
+		/** @noinspection PhpUndefinedFieldInspection */
 		echo $composerProcessRunStatus->stdout;
 	}
 
@@ -394,7 +406,7 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected function runNonInteractiveMode( array $assocArgs ) {
 		$this->runComposerAction( $assocArgs );
-		$wpceptExitStatus = $this->runWpcept( $assocArgs );
+		$wpceptExitStatus = $this->runWpcept();
 
 		$this->end( $wpceptExitStatus );
 

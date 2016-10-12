@@ -74,4 +74,3 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup
     """
-
