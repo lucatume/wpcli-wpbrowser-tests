@@ -13,7 +13,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should contain:
     """
-    Run `composer install` from this folder to install wp-browser
+    Run `composer install
     """
     Then STDOUT should contain:
     """
@@ -31,7 +31,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should contain:
     """
-    Run `composer update` from this folder to install or update wp-browser
+    Run `composer update
     """
     Then STDOUT should contain:
     """
