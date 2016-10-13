@@ -49,13 +49,9 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     All done
     """
-    Then STDOUT should not contain:
-    """
-    Run `composer update` from this folder to install or update wp-browser
-    """
     Then STDOUT should contain:
     """
-    Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup
+    ./vendor/bin/wpcept bootstrap --interactive-mode
     """
 
   @pathEnv @mockWpcept
@@ -72,5 +68,5 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should not contain:
     """
-    Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup
+    ./vendor/bin/wpcept bootstrap --interactive-mode
     """
