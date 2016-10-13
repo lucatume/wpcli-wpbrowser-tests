@@ -58,6 +58,11 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected $noInstall;
 
+	/**
+	 * @var The main plugin file.
+	 */
+	protected $pluginFile;
+
 
 	public function __construct(
 		FileTemplates $fileTemplates = null,
@@ -66,7 +71,7 @@ class PluginTests extends \WP_CLI_Command {
 	) {
 		$this->fileTemplates   = $fileTemplates ?: new FileTemplates();
 		$this->jsonFileHandler = $jsonFileHandler ?: new JsonFileHandler();
-		$this->composer = $composer ?: new Composer();
+		$this->composer        = $composer ?: new Composer();
 	}
 
 	/**
@@ -151,21 +156,23 @@ class PluginTests extends \WP_CLI_Command {
 	}
 
 	protected function printComposerInstructions() {
-		$updateMessage  = 'Run `composer update` from this folder to install or update wp-browser';
-		$installMessage = 'Run `composer install` from this folder to install wp-browser';
+		$dir            = getcwd() === $this->dir ? '' : ' -d ' . $this->dir;
+		$updateMessage  = "Run `composer update$dir` to install or update wp-browser";
+		$installMessage = "Run `composer install$dir` to install wp-browser";
 		$message        = $this->composerFileUpdatedOrCreated ? $updateMessage : $installMessage;
-		cli::line( $message . "\n" );
+		cli::line( $message );
 	}
 
 	protected function printWpceptInstructions() {
-		cli::line( "Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup\n" );
+		$dir = getcwd() === $this->dir ? '' : 'cd ' . $this->dir . ' && ';
+		cli::line( "Run `$dir./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive tests setup\n" );
 	}
 
 	private function end( $status = 0 ) {
 		if ( $status === 0 ) {
-			\cli\line( "\n\nAll done!" );
+			cli::success( "All done!" );
 		} else {
-			\cli\line( "\n\nSomething went wrong... Read the output above to debug." );
+			cli::error( "Something went wrong... Read the output above to debug." );
 		}
 
 		return $status;
@@ -178,6 +185,7 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected function runInteractiveMode( array $assocArgs ) {
 		if ( ! ( $this->promptForComposerUpdate() ) ) {
+			cli::line();
 			$this->printComposerInstructions();
 			$this->printWpceptInstructions();
 			$this->end();
@@ -188,6 +196,7 @@ class PluginTests extends \WP_CLI_Command {
 		$this->runComposerAction( $assocArgs );
 
 		if ( ! ( $this->promptForWpceptBootstrap() ) ) {
+			cli::line();
 			$this->printWpceptInstructions();
 			$this->end();
 
@@ -260,7 +269,7 @@ class PluginTests extends \WP_CLI_Command {
 	private function promptForComposerUpdate() {
 		$action = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
 
-		return \cli\confirm( 'Do you want to ' . $action . ' Composer dependencies now', true );
+		return \cli\confirm( "\nDo you want to " . $action . ' Composer dependencies now', true );
 	}
 
 	/**
@@ -268,11 +277,17 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected function runComposerAction( array $assocArgs ) {
 		$action          = $this->composerFileUpdatedOrCreated ? 'update' : 'install';
-		$composerCommand = sprintf( '%s %s -d=%s', $assocArgs['composer'], $action, $this->dir );
-		$env             = array( 'PATH' => getenv( 'PATH' ) );
+		$composerCommand = sprintf( '%s %s --working-dir %s', $assocArgs['composer'], $action, $this->dir );
+		$env             = array( 'PATH' => getenv( 'PATH' ), 'HOME' => getenv( 'HOME' ) );
+		if ( getenv( 'COMPOSER_HOME' ) ) {
+			$env['COMPOSER_HOME'] = getenv( 'COMPOSER_HOME' );
+		}
 		$composerProcess = cli\Process::create( $composerCommand, $this->dir, $env );
+
+		cli::line( 'Running composer ' . $action . '...' );
+
 		/** @var cli\ProcessRun $composerProcessRunStatus */
-		$composerProcessRunStatus = $composerProcess->run();
+		$composerProcessRunStatus = $composerProcess->run_check();
 
 		/** @noinspection PhpUndefinedFieldInspection */
 		if ( $composerProcessRunStatus->return_code || ! empty( $composerProcessRunStatus->stderr ) ) {
@@ -281,7 +296,7 @@ class PluginTests extends \WP_CLI_Command {
 			return 1;
 		}
 
-		$this->outputSubProcessOutput( $composerProcessRunStatus );
+		cli::line( 'Composer ' . $action . ' complete!' );
 
 		return 0;
 	}
@@ -304,17 +319,20 @@ class PluginTests extends \WP_CLI_Command {
 
 		chdir( $this->dir );
 
+		/** @var \wpdb $wpdb */
+		global $wpdb;
+
 		/** @noinspection PhpUndefinedVariableInspection */
 		$arguments = array(
 			'--dbHost=' . DB_HOST,
 			'--dbName=' . DB_NAME,
 			'--dbUser=' . DB_USER,
 			'--dbPassword=' . DB_PASSWORD,
-			'--tablePrefix=' . $table_prefix,
+			'--tablePrefix=' . $wpdb->prefix,
 			'--url=' . home_url(),
 			'--wpRootFolder=' . ABSPATH,
-			'--adminPath=' . ABSPATH . '/wp-admin',
-			'--plugins=' . basename( $this->dir )
+			'--adminPath=' . str_replace( home_url(), '', site_url() ) . '/wp-admin',
+			'--plugins=' . basename( dirname( $this->pluginFile ) ) . '/' . basename( $this->pluginFile )
 		);
 
 		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive' . ' ' . implode( ' ', $arguments );
@@ -362,14 +380,6 @@ class PluginTests extends \WP_CLI_Command {
 		cli::error_multi_line( "Error while running '{$subprocessCommand}':'n\n" . $subProcessRunStatus );
 	}
 
-	/**
-	 * @param cli\ProcessRun $composerProcessRunStatus
-	 */
-	protected function outputSubProcessOutput( $composerProcessRunStatus ) {
-		/** @noinspection PhpUndefinedFieldInspection */
-		echo $composerProcessRunStatus->stdout;
-	}
-
 	private function isWindows() {
 		if ( strtoupper( substr( PHP_OS, 0, 3 ) ) === 'WIN' ) {
 			return true;
@@ -391,6 +401,8 @@ class PluginTests extends \WP_CLI_Command {
 			if ( substr( $file, - 4 ) == '.php' ) {
 				$pluginData = get_plugin_data( $file, false, false );
 				if ( false !== $pluginData ) {
+					$this->pluginFile = $file;
+
 					return $pluginData;
 				}
 			}
