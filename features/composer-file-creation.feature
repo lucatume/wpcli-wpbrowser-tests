@@ -3,7 +3,7 @@ Feature: Test that a composer configuration file is created or in the destinatio
   Background:
     Given a WP install
 
-  @cleanTemp @current
+  @cleanTemp
   Scenario: if not found a composer configuration file is created
     Given the next command is called with the `--no-install` option
     Given the next command is called with the `--dir` parameter

@@ -75,12 +75,14 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	}
 
 	private static function run_sql( $sql ) {
-		Utils\run_mysql_command( 'mysql --no-defaults', array(
-			'execute' => $sql,
-			'host'    => self::$db_settings['dbhost'],
-			'user'    => self::$db_settings['dbuser'],
-			'pass'    => self::$db_settings['dbpass'],
-		) );
+		Utils\run_mysql_command(
+			'mysql --no-defaults', array(
+				'execute' => $sql,
+				'host'    => self::$db_settings['dbhost'],
+				'user'    => self::$db_settings['dbuser'],
+				'pass'    => self::$db_settings['dbpass'],
+			)
+		);
 	}
 
 	public function proc( $command, $assoc_args = array(), $path = '' ) {
@@ -247,8 +249,12 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 	public function build_phar( $version = 'same' ) {
 		$this->variables['PHAR_PATH'] = $this->variables['RUN_DIR'] . '/' . uniqid( "wp-cli-build-", true ) . '.phar';
 
-		$this->proc( Utils\esc_cmd( 'php -dphar.readonly=0 %1$s %2$s --version=%3$s && chmod +x %2$s',
-			__DIR__ . '/../../utils/make-phar.php', $this->variables['PHAR_PATH'], $version ) )->run_check();
+		$this->proc(
+			Utils\esc_cmd(
+				'php -dphar.readonly=0 %1$s %2$s --version=%3$s && chmod +x %2$s', __DIR__ . '/../../utils/make-phar.php',
+				$this->variables['PHAR_PATH'], $version
+			)
+		)->run_check();
 	}
 
 	/**
@@ -343,6 +349,7 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 		$this->pathBackup = getenv( 'PATH' );
 		$newPath          = 'PATH=' . $this->get_data_dir() . ':' . $this->pathBackup;
 		putenv( $newPath );
+		$this->setupSemaphore();
 	}
 
 	/**
@@ -412,6 +419,24 @@ class FeatureContext extends BehatContext implements ClosuredContextInterface {
 
 		rename( $composerFile, $badComposerFile );
 		rename( $tempComposerFile, $composerFile );
+	}
+
+	protected function setupSemaphore() {
+		$semaphore = 100;
+		$segment   = 200;
+
+		$sem      = sem_get( $semaphore, 1, 0600 );
+
+		$acquired = sem_acquire( $sem );
+
+		if ( ! $acquired ) {
+			throw new RuntimeException( 'Could not connect to semaphore' );
+		}
+
+		$shm       = shm_attach( $segment, 16384, 0600 );
+		$processes = shm_put_var( $shm, 23, array() );
+		shm_detach( $shm );
+		sem_release( $sem );
 	}
 
 	private function _replace_var( $matches ) {

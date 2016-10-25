@@ -3,37 +3,45 @@
 use Behat\Gherkin\Node\PyStringNode;
 use Behat\Gherkin\Node\TableNode;
 
-$steps->Then( '/^the return code should be (\d+)$/', function ( $world, $return_code ) {
+$steps->Then(
+	'/^the return code should be (\d+)$/', function ( $world, $return_code ) {
 	if ( $return_code != $world->result->return_code ) {
 		throw new RuntimeException( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^(STDOUT|STDERR) should (be|contain|not contain):$/',
-	function ( $world, $stream, $action, PyStringNode $expected ) {
+$steps->Then(
+	'/^(STDOUT|STDERR) should (be|contain|not contain):$/', function ( $world, $stream, $action, PyStringNode $expected ) {
 
-		$stream = strtolower( $stream );
+	$stream = strtolower( $stream );
 
-		$expected = $world->replace_variables( (string) $expected );
+	$expected = $world->replace_variables( (string) $expected );
 
-		checkString( $world->result->$stream, $expected, $action, $world->result );
-	} );
+	checkString( $world->result->$stream, $expected, $action, $world->result );
+}
+);
 
-$steps->Then( '/^(STDOUT|STDERR) should be a number$/', function ( $world, $stream ) {
+$steps->Then(
+	'/^(STDOUT|STDERR) should be a number$/', function ( $world, $stream ) {
 
 	$stream = strtolower( $stream );
 
 	assertNumeric( trim( $world->result->$stream, "\n" ) );
-} );
+}
+);
 
-$steps->Then( '/^(STDOUT|STDERR) should not be a number$/', function ( $world, $stream ) {
+$steps->Then(
+	'/^(STDOUT|STDERR) should not be a number$/', function ( $world, $stream ) {
 
 	$stream = strtolower( $stream );
 
 	assertNotNumeric( trim( $world->result->$stream, "\n" ) );
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should be a table containing rows:$/', function ( $world, TableNode $expected ) {
+$steps->Then(
+	'/^STDOUT should be a table containing rows:$/', function ( $world, TableNode $expected ) {
 	$output      = $world->result->stdout;
 	$actual_rows = explode( "\n", rtrim( $output, "\n" ) );
 
@@ -43,9 +51,11 @@ $steps->Then( '/^STDOUT should be a table containing rows:$/', function ( $world
 	}
 
 	compareTables( $expected_rows, $actual_rows, $output );
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should end with a table containing rows:$/', function ( $world, TableNode $expected ) {
+$steps->Then(
+	'/^STDOUT should end with a table containing rows:$/', function ( $world, TableNode $expected ) {
 	$output      = $world->result->stdout;
 	$actual_rows = explode( "\n", rtrim( $output, "\n" ) );
 
@@ -61,18 +71,22 @@ $steps->Then( '/^STDOUT should end with a table containing rows:$/', function ( 
 	}
 
 	compareTables( $expected_rows, array_slice( $actual_rows, $start ), $output );
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should be JSON containing:$/', function ( $world, PyStringNode $expected ) {
+$steps->Then(
+	'/^STDOUT should be JSON containing:$/', function ( $world, PyStringNode $expected ) {
 	$output   = $world->result->stdout;
 	$expected = $world->replace_variables( (string) $expected );
 
 	if ( ! checkThatJsonStringContainsJsonString( $output, $expected ) ) {
 		throw new \Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should be a JSON array containing:$/', function ( $world, PyStringNode $expected ) {
+$steps->Then(
+	'/^STDOUT should be a JSON array containing:$/', function ( $world, PyStringNode $expected ) {
 	$output   = $world->result->stdout;
 	$expected = $world->replace_variables( (string) $expected );
 
@@ -83,9 +97,11 @@ $steps->Then( '/^STDOUT should be a JSON array containing:$/', function ( $world
 	if ( ! empty( $missing ) ) {
 		throw new \Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should be CSV containing:$/', function ( $world, TableNode $expected ) {
+$steps->Then(
+	'/^STDOUT should be CSV containing:$/', function ( $world, TableNode $expected ) {
 	$output = $world->result->stdout;
 
 	$expected_rows = $expected->getRows();
@@ -98,36 +114,44 @@ $steps->Then( '/^STDOUT should be CSV containing:$/', function ( $world, TableNo
 	if ( ! checkThatCsvStringContainsValues( $output, $expected_rows ) ) {
 		throw new \Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^STDOUT should be YAML containing:$/', function ( $world, PyStringNode $expected ) {
+$steps->Then(
+	'/^STDOUT should be YAML containing:$/', function ( $world, PyStringNode $expected ) {
 	$output   = $world->result->stdout;
 	$expected = $world->replace_variables( (string) $expected );
 
 	if ( ! checkThatYamlStringContainsYamlString( $output, $expected ) ) {
 		throw new \Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^(STDOUT|STDERR) should be empty$/', function ( $world, $stream ) {
+$steps->Then(
+	'/^(STDOUT|STDERR) should be empty$/', function ( $world, $stream ) {
 
 	$stream = strtolower( $stream );
 
 	if ( ! empty( $world->result->$stream ) ) {
 		throw new \Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^(STDOUT|STDERR) should not be empty$/', function ( $world, $stream ) {
+$steps->Then(
+	'/^(STDOUT|STDERR) should not be empty$/', function ( $world, $stream ) {
 
 	$stream = strtolower( $stream );
 
 	if ( '' === rtrim( $world->result->$stream, "\n" ) ) {
 		throw new Exception( $world->result );
 	}
-} );
+}
+);
 
-$steps->Then( '/^the (.+) (file|directory) should (exist|not exist|be:|contain:|not contain:)$/',
+$steps->Then(
+	'/^the (.+) (file|directory) should (exist|not exist|be:|contain:|not contain:)$/',
 	function ( $world, $path, $type, $action, $expected = null ) {
 		$path = $world->replace_variables( $path );
 
@@ -170,16 +194,20 @@ $steps->Then( '/^the (.+) (file|directory) should (exist|not exist|be:|contain:|
 				}
 				checkString( $contents, $expected, $action );
 		}
-	} );
+	}
+);
 
-$steps->Then( '/^the file `(.+)` should exist in the `(.+)` folder in data$/', function ( $world, $file, $folder ) {
+$steps->Then(
+	'/^the file `(.+)` should exist in the `(.+)` folder in data$/', function ( $world, $file, $folder ) {
 	$path = $world->get_data_dir( trim( $folder, '/' ) . '/' . trim( $file, '/' ) );
 	if ( ! file_exists( $path ) ) {
 		throw new Exception( "Data folder '{$folder}' does not contain a '{$file}' file." );
 	}
-} );
+}
+);
 
-$steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$/', function (
+$steps->Then(
+	'/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$/', function (
 	$world,
 	$format = null,
 	$file,
@@ -202,9 +230,11 @@ $steps->Then( '/^the (.*) file `(.+)` in the `(.+)` data folder should contain:$
 			checkString( $contents, $expected, 'contain' );
 			break;
 	}
-} );
+}
+);
 
-$steps->Then( '/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function ( $world, $file, $slug, $expected ) {
+$steps->Then(
+	'/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function ( $world, $file, $slug, $expected ) {
 	$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/' . $slug;
 	$filePath = $rootDir . '/' . ltrim( $file, '/' );
 
@@ -215,8 +245,27 @@ $steps->Then( '/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', fu
 	$contents = file_get_contents( $filePath );
 	$expected = $world->replace_variables( (string) $expected );
 	checkString( $contents, $expected, 'contain' );
-} );
+}
+);
 
 $steps->Then( '/^\'([^\']*)\' should have been called$/', function ( $world, $command ) {
-	checkString( trim( $world->result->stdout, "\n" ), 'Running mocked ' . $command, 'contain' );
+	$semaphore = 100;
+	$segment   = 200;
+
+	$sem = sem_get( $semaphore, 1, 0600 );
+
+	$acquired = sem_acquire( $sem );
+	if ( ! $acquired ) {
+		throw new Exception( 'Cannot acquire semaphore' );
+	}
+
+	$shm = shm_attach( $segment, 16384, 0600 );
+	$processes = shm_get_var( $shm, 23 );
+
+	if ( ! in_array( $command, $processes ) ) {
+		throw new RuntimeException( $command . ' never ran.' );
+	}
+
+	shm_detach( $shm );
+	sem_release( $sem );
 } );

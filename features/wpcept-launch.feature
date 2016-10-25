@@ -17,7 +17,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should contain:
     """
-    Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup
+    --interactive-mode` to start wp-browser interactive tests setup
     """
 
   Scenario: the command will end if the user wants to manually update composer dependencies
@@ -35,7 +35,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should contain:
     """
-    Run `./vendor/bin/wpcept bootstrap --interactive-mode` to start wp-browser interactive test setup
+    --interactive-mode` to start wp-browser interactive tests setup
     """
 
   @pathEnv
@@ -51,7 +51,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     """
     Then STDOUT should contain:
     """
-    ./vendor/bin/wpcept bootstrap --interactive-mode
+    --interactive-mode` to start wp-browser interactive tests setup
     """
 
   @pathEnv @mockWpcept
