@@ -10,6 +10,7 @@ use tad\WPCLI\System\Composer;
 use tad\WPCLI\Templates\FileTemplates;
 use tad\WPCLI\Utils\JsonFileHandler;
 use WP_CLI as cli;
+use WP_CLI\Process as Process;
 
 class PluginTests extends \WP_CLI_Command {
 
@@ -63,6 +64,11 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected $pluginFile;
 
+	/**
+	 * @var bool
+	 */
+	protected $debug = false;
+
 
 	public function __construct(
 		FileTemplates $fileTemplates = null,
@@ -85,6 +91,7 @@ class PluginTests extends \WP_CLI_Command {
 		$this->assocArgs = $assocArgs;
 		$this->dryRun    = isset( $assocArgs['dry-run'] );
 		$this->noInstall = isset( $assocArgs['install'] ) && $assocArgs['install'] == false;
+		$this->debug     = isset( $assocArgs['debug'] );
 
 		$targetDir = $this->getScaffoldTargetDir( $args, $assocArgs );
 
@@ -116,7 +123,9 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected function getScaffoldTargetDir( array $args, array $assocArgs ) {
 		if ( empty( $assocArgs['dir'] ) && empty( $args[1] ) ) {
-			throw new MissingRequiredArgumentException( 'Specify an existing plugin folder basename or a destination using the --dir parameter.' );
+			throw new MissingRequiredArgumentException(
+				'Specify an existing plugin folder basename or a destination using the --dir parameter.'
+			);
 		} elseif ( ! empty( $assocArgs['dir'] ) ) {
 			$targetDir = $assocArgs['dir'];
 			$this->ensureDir( $targetDir );
@@ -238,9 +247,9 @@ class PluginTests extends \WP_CLI_Command {
 	 */
 	protected function updateComposerFile( $composerJsonFile ) {
 		cli::log( "Existing 'composer.json' file will be updated." );
-		$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )
-		                               ->addPropertyValue( 'require-dev', 'lucatume/wp-browser', '*' )
-		                               ->write();
+		$wrote = $this->jsonFileHandler->setFile( $composerJsonFile )->addPropertyValue(
+				'require-dev', 'lucatume/wp-browser', '*'
+			)->write();
 
 		if ( ! $wrote ) {
 			throw new FileCreationException( "Could not update existing 'composer.json' file." );
@@ -258,8 +267,9 @@ class PluginTests extends \WP_CLI_Command {
 	protected function createComposerFile( array $assocArgs, $composerJsonFile ) {
 		cli::log( "Creating '{$composerJsonFile}' file" );
 		$composerFileArgs = array_merge( $this->readPluginInformation(), $assocArgs );
-		$created          = file_put_contents( $composerJsonFile,
-			$this->fileTemplates->getComposerPluginConfig( $composerFileArgs ) );
+		$created          = file_put_contents(
+			$composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $composerFileArgs )
+		);
 		if ( false === $created ) {
 			throw new FileCreationException( "File '{$composerJsonFile}' creation failed" );
 		}
@@ -312,7 +322,9 @@ class PluginTests extends \WP_CLI_Command {
 		$expectedLocation = $this->dir . '/vendor/bin/' . $wpcept;
 
 		if ( ! file_exists( $expectedLocation ) ) {
-			\cli\err( "WPBrowser bin 'wpcept' not found in the expected location '{$expectedLocation}'.\nRun it manually using the 'wpcept bootstrap --interactive' command." );
+			\cli\err(
+				"WPBrowser bin 'wpcept' not found in the expected location '{$expectedLocation}'.\nRun it manually using the 'wpcept bootstrap --interactive' command."
+			);
 
 			return - 1;
 		}
@@ -324,22 +336,37 @@ class PluginTests extends \WP_CLI_Command {
 
 		/** @noinspection PhpUndefinedVariableInspection */
 		$arguments = array(
-			'--dbHost=' . DB_HOST,
-			'--dbName=' . DB_NAME,
-			'--dbUser=' . DB_USER,
-			'--dbPassword=' . DB_PASSWORD,
-			'--tablePrefix=' . $wpdb->prefix,
-			'--url=' . home_url(),
-			'--wpRootFolder=' . ABSPATH,
-			'--adminPath=' . str_replace( home_url(), '', site_url() ) . '/wp-admin',
-			'--plugins=' . basename( dirname( $this->pluginFile ) ) . '/' . basename( $this->pluginFile )
+			'dbHost'       => DB_HOST,
+			'dbName'       => DB_NAME,
+			'dbUser'       => DB_USER,
+			'dbPassword'   => DB_PASSWORD,
+			'tablePrefix'  => $wpdb->prefix,
+			'url'          => home_url(),
+			'wpRootFolder' => ABSPATH,
+			'adminPath'    => str_replace( home_url(), '', site_url() ) . '/wp-admin',
+			'plugins'      => basename( dirname( $this->pluginFile ) ) . '/' . basename( $this->pluginFile )
+		);
+
+		array_walk(
+			$arguments, function ( &$value, $key ) {
+			return '--' . $key . '=' . escapeshellarg( $value );
+		}
 		);
 
 		$wpceptCommand = './vendor/bin/' . $wpcept . ' bootstrap --interactive' . ' ' . implode( ' ', $arguments );
 
-		passthru( $wpceptCommand, $return );
+		if ( $this->debug ) {
+			$wpceptCommand . ' -vvv';
+		}
 
-		return $return;
+		$wpceptProcess = Process::create( $wpceptCommand, $this->dir );
+		$exit = $wpceptProcess->run();
+
+		if ( $exit->return_code !== 0 ) {
+			echo $exit->stdout;
+		}
+
+		return $exit->return_code;
 	}
 
 	protected function readPluginInformation() {
@@ -409,19 +436,5 @@ class PluginTests extends \WP_CLI_Command {
 		}
 
 		return false;
-	}
-
-	/**
-	 * @param array $assocArgs
-	 *
-	 * @return int
-	 */
-	protected function runNonInteractiveMode( array $assocArgs ) {
-		$this->runComposerAction( $assocArgs );
-		$wpceptExitStatus = $this->runWpcept();
-
-		$this->end( $wpceptExitStatus );
-
-		return 0;
 	}
 }
