@@ -34,6 +34,11 @@ WP_CLI::add_command( 'wpb-scaffold', new Scaffold(), array(
 			'optional' => true,
 		),
 		array(
+			'type'     => 'flag',
+			'name'     => 'skip-composer-update',
+			'optional' => true,
+		),
+		array(
 			'type'     => 'assoc',
 			'name'     => 'composer',
 			'optional' => true,
