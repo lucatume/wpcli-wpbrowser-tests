@@ -33,9 +33,15 @@ class Scaffold extends \WP_CLI_Command {
 	 */
 	protected $pluginTests;
 
-	public function __construct( Composer $composer = null, PluginTests $pluginTests = null ) {
+	/**
+	 * @var ThemeTests
+	 */
+	protected $themeTests;
+
+	public function __construct( Composer $composer = null, PluginTests $pluginTests = null, ThemeTests $themeTests = null ) {
 		$this->composer    = $composer ?: new Composer();
 		$this->pluginTests = $pluginTests ?: new PluginTests();
+		$this->themeTests  = $themeTests ?: new ThemeTests();
 	}
 
 
@@ -48,6 +54,8 @@ class Scaffold extends \WP_CLI_Command {
 		switch ( $subcommand ) {
 			case 'plugin-tests':
 				return $this->pluginTests( $args, $assocArgs );
+			case 'theme-tests':
+				return $this->themeTests( $args, $assocArgs );
 			default:
 				return $this->help();
 		}
@@ -87,5 +95,23 @@ class Scaffold extends \WP_CLI_Command {
 	 */
 	public function setCastExceptionsToErrors( $castExceptionsToErrors ) {
 		$this->castExceptionsToErrors = $castExceptionsToErrors;
+	}
+
+	public function themeTests( $args, $assocArgs ) {
+		$this->args      = $args;
+		$this->assocArgs = $assocArgs;
+
+		try {
+			$composerPath          = $this->composer->ensureComposer( $this->assocArgs );
+			$assocArgs['composer'] = ! empty( $assocArgs['composer'] ) ?: $composerPath;
+			$this->themeTests->scaffold( $args, $assocArgs );
+		} catch ( BaseException $e ) {
+			if ( $this->castExceptionsToErrors ) {
+				\WP_CLI::error( $e->getMessage(), 0 );
+
+				return false;
+			}
+			throw $e;
+		}
 	}
 }

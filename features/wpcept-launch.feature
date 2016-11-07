@@ -54,7 +54,7 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     --interactive-mode` to start wp-browser interactive tests setup
     """
 
-  @pathEnv @mockWpcept @current
+  @pathEnv @mockWpcept
   Scenario: the command will launch wpcept interactive mode if the user wants it to
     Given I will answer 'y' to the 'composer update' question
     Given I will answer 'y' to the 'wpcept bootstrap' question

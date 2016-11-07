@@ -2,17 +2,28 @@
 
 namespace tad\WPCLI\Commands;
 
-class PluginTests extends TestScaffold {
+
+class ThemeTests extends TestScaffold {
+
+	protected $scaffoldType = 'theme';
+
+	/**
+	 * @var string The current theme stylesheet
+	 */
+	protected $stylesheet;
+
 	/**
 	 * @param array $args
 	 *
 	 * @return string
 	 */
 	protected function getDefaultTargetDir( array $args ) {
-		return WP_PLUGIN_DIR . DIRECTORY_SEPARATOR . $args[1];
+		return implode( DIRECTORY_SEPARATOR, array( WP_CONTENT_DIR, '/themes/', $args[1] ) );
 	}
 
 	protected function readComponentInformation() {
+		$theme = wp_get_theme( $this->stylesheet );
+
 		$pluginData = $this->getPluginData();
 		if ( empty( $pluginData ) ) {
 			return array();
@@ -43,6 +54,6 @@ class PluginTests extends TestScaffold {
 	}
 
 	protected function init() {
-		// no op
+		$this->stylesheet = $args[1];
 	}
 }
