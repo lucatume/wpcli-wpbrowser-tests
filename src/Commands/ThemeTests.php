@@ -18,7 +18,7 @@ class ThemeTests extends TestScaffold {
 	 * @return string
 	 */
 	protected function getDefaultTargetDir( array $args ) {
-		return implode( DIRECTORY_SEPARATOR, array( WP_CONTENT_DIR, '/themes/', $args[1] ) );
+		return implode( DIRECTORY_SEPARATOR, array( WP_CONTENT_DIR, 'themes', $args[1] ) );
 	}
 
 	protected function readComponentInformation() {

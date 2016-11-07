@@ -1,4 +1,3 @@
-@current
 Feature: Test that the command will accept a custom destination or use the current folder
 
   Background:

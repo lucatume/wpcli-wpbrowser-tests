@@ -231,7 +231,7 @@ $steps->Given(
 );
 
 $steps->Given(
-	'/^the \'([^\']*)\' (plugin|theme) folder exists$/', function ( $world, $type, $folder ) {
+	'/^the \'([^\']*)\' (plugin|theme) folder exists$/', function ( $world, $folder, $type ) {
 	if ( $type === 'plugin' ) {
 		$rootDir = $world->variables['RUN_DIR'] . '/wp-content/plugins';
 		mkdir( $rootDir . '/' . ltrim( $folder, '/' ), 0777, true );
