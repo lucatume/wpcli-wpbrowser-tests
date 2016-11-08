@@ -22,9 +22,13 @@ class ThemeTests extends TestScaffold {
 	}
 
 	protected function readComponentInformation() {
+		if ( ! is_dir( WP_CONTENT_DIR . '/themes/' . basename( $this->dir ) ) ) {
+			return array();
+		}
+
 		$theme = wp_get_theme( $this->stylesheet );
 
-		if (!$theme->exists()) {
+		if ( ! $theme->exists() ) {
 			return array();
 		}
 
@@ -32,22 +36,22 @@ class ThemeTests extends TestScaffold {
 
 
 		if ( ! ( empty( $theme->get( 'Author' ) ) ) ) {
-			$authorName   = $theme->get('Author');
+			$authorName   = $theme->get( 'Author' );
 			$authorSlug   = sanitize_title( $authorName );
-			$themeSlug   = basename( $this->dir );
+			$themeSlug    = basename( $this->dir );
 			$info['slug'] = "{$authorSlug}/{$themeSlug}";
 			$info['name'] = $authorName;
 
-			if ( ! empty( $theme->get('AuthorURI')) ) {
-				$domain = parse_url( $theme->get('AuthorURI'), PHP_URL_HOST );
+			if ( ! empty( $theme->get( 'AuthorURI' ) ) ) {
+				$domain = parse_url( $theme->get( 'AuthorURI' ), PHP_URL_HOST );
 				if ( ! empty( $domain ) ) {
 					$info['email'] = str_replace( ' ', '.', strtolower( $authorName ) ) . '@' . $domain;
 				}
 			}
 		}
 
-		if ( ! empty( $themeData['Description'] ) ) {
-			$info['description'] = $themeData['Description'];
+		if ( ! empty( $theme->get( 'Description' ) ) ) {
+			$info['description'] = $theme->get( 'Description' );
 		} else {
 			$info['description'] = '';
 		}

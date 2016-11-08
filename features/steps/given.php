@@ -317,9 +317,14 @@ $steps->Given(
 );
 
 $steps->Given(
-	'/^I run `composer ([^`]*)` in the \'([^\']*)\' plugin$/', function ( $world, $composerCommand, $pluginSlug ) {
-	$subdir = '/wp-content/plugins/' . $pluginSlug;
-	$dir    = $world->variables['RUN_DIR'] . $subdir;
+	'/^I run `composer ([^`]*)` in the \'([^\']*)\' (plugin|theme)$/', function ( $world, $composerCommand, $slug, $type ) {
+	if ( $type === 'plugin' ) {
+		$subdir = '/wp-content/plugins/' . $slug;
+	} else {
+		$subdir = '/wp-content/themes/' . $slug;
+	}
+
+	$dir = $world->variables['RUN_DIR'] . $subdir;
 
 	if ( ! is_dir( $dir ) ) {
 		mkdir( $dir, 0777, true );
@@ -332,9 +337,13 @@ $steps->Given(
 );
 
 $steps->Given(
-	'/^I\'m working on the \'([^\']*)\' plugin$/', function ( $world, $slug ) {
-	$subdir = '/wp-content/plugins/' . $slug;
-	$dir    = $world->variables['RUN_DIR'] . $subdir;
+	'/^I\'m working on the \'([^\']*)\' (plugin|theme)$/', function ( $world, $slug, $type ) {
+	if ( $type === 'plugin' ) {
+		$subdir = '/wp-content/plugins/' . $slug;
+	} else {
+		$subdir = '/wp-content/themes/' . $slug;
+	}
+	$dir = $world->variables['RUN_DIR'] . $subdir;
 
 	$world->variables['cwd'] = $dir;
 }

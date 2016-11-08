@@ -1,4 +1,3 @@
-@current
 Feature: Test that the theme tests bootstrap command will read the target theme data to fill the composer.json file
   information
 
@@ -12,7 +11,7 @@ Feature: Test that the theme tests bootstrap command will read the target theme 
         """
         {
             "name": "your-name/some-theme",
-            "description": "",
+            "description": "Twentysixteen child theme.",
             "type": "wordpress-theme",
             "minimum-stability": "stable",
             "require-dev": {
@@ -60,7 +59,7 @@ Feature: Test that the theme tests bootstrap command will read the target theme 
         """
         {
             "name": "someone/some-project",
-            "description": "",
+            "description": "Twentysixteen child theme.",
             "type": "wordpress-theme",
             "minimum-stability": "stable",
             "require-dev": {

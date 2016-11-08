@@ -27,10 +27,10 @@ class FileTemplates {
 JSON;
 
 		$defaults = array(
-			'slug'  => 'acme/my-plugin',
-			'description' => 'My plugin',
-			'name'  => 'Me',
-			'email' => 'me@example.com'
+			'slug'        => 'acme/my-' . $data['type'],
+			'description' => 'My ' . $data['type'],
+			'name'        => 'Me',
+			'email'       => 'me@example.com'
 		);
 
 		return $this->compile( $template, array_merge( $defaults, $data ) );
