@@ -35,8 +35,9 @@ class ThemeTests extends TestScaffold {
 		$info = array();
 
 
-		if ( ! ( empty( $theme->get( 'Author' ) ) ) ) {
-			$authorName   = $theme->get( 'Author' );
+		$themeAuthor = $theme->get( 'Author' );
+		if ( ! ( empty( $themeAuthor ) ) ) {
+			$authorName   = $themeAuthor;
 			$authorSlug   = sanitize_title( $authorName );
 			$themeSlug    = basename( $this->dir );
 			$info['slug'] = "{$authorSlug}/{$themeSlug}";
