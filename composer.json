@@ -1,10 +1,16 @@
 {
     "name": "lucatume/wpcli-wpbrowser-tests",
     "description": "Scaffold wp-browser based tests for a plugin or theme",
+    "type": "wp-cli-package",
     "homepage": "https://github.com/lucatume/wpcli-wpbrowser-tests",
     "license": "MIT",
-    "authors": [],
-    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Luca Tumedei",
+            "email": "luca@theaveragedev.com",
+            "homepage": "http://theaveragedev.com"
+        }
+    ],
     "autoload": {
         "files": [ "command.php" ],
         "psr-4": {
@@ -12,6 +18,7 @@
         }
     },
     "require": {
+        "php": ">=5.3",
         "wp-cli/wp-cli": "~0.23.0"
     },
     "require-dev": {
