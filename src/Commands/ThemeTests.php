@@ -43,16 +43,18 @@ class ThemeTests extends TestScaffold {
 			$info['slug'] = "{$authorSlug}/{$themeSlug}";
 			$info['name'] = $authorName;
 
-			if ( ! empty( $theme->get( 'AuthorURI' ) ) ) {
-				$domain = parse_url( $theme->get( 'AuthorURI' ), PHP_URL_HOST );
+			$authorUri = $theme->get( 'AuthorURI' );
+			if ( ! empty( $authorUri ) ) {
+				$domain = parse_url( $authorUri, PHP_URL_HOST );
 				if ( ! empty( $domain ) ) {
 					$info['email'] = str_replace( ' ', '.', strtolower( $authorName ) ) . '@' . $domain;
 				}
 			}
 		}
 
-		if ( ! empty( $theme->get( 'Description' ) ) ) {
-			$info['description'] = $theme->get( 'Description' );
+		$description = $theme->get( 'Description' );
+		if ( ! empty( $description ) ) {
+			$info['description'] = $description;
 		} else {
 			$info['description'] = '';
 		}
