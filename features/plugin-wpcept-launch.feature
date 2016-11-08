@@ -54,14 +54,15 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     --interactive-mode` to start wp-browser interactive tests setup
     """
 
-  @pathEnv @mockWpcept
+  @pathEnv @mockWpcept @current
   Scenario: the command will launch wpcept interactive mode if the user wants it to
     Given I will answer 'y' to the 'composer update' question
     Given I will answer 'y' to the 'wpcept bootstrap' question
     Given I'm working on the 'some-plugin' plugin
     When I run `wp scaffold plugin some-plugin --plugin_name="Some Plugin" --plugin_description="Description of the plugin." --plugin_author="Your Name" --plugin_author_uri="http://example.com"`
     And I run `wp wpb-scaffold plugin-tests some-plugin` with input
-    Then 'wpcept' should have been called
+    Then 'wpcept' should have been called with '--type=plugin'
+    Then 'wpcept' should have been called with '--plugins=some-plugin/some-plugin.php'
     Then STDOUT should contain:
     """
     All done

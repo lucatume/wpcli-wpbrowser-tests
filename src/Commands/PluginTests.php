@@ -3,6 +3,7 @@
 namespace tad\WPCLI\Commands;
 
 class PluginTests extends TestScaffold {
+
 	/**
 	 * @param array $args
 	 *
@@ -44,5 +45,15 @@ class PluginTests extends TestScaffold {
 
 	protected function init() {
 		// no op
+	}
+
+	protected function getWpceptArguments() {
+		$arguments = array( 'type' => 'plugin' );
+
+		if ( ! empty( $this->pluginFile ) ) {
+			$arguments['plugins'] = basename( dirname( $this->pluginFile ) ) . '/' . basename( $this->pluginFile );
+		}
+
+		return $arguments;
 	}
 }

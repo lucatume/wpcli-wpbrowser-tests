@@ -21,7 +21,7 @@ $shm = shm_attach($segment_id,16384,0600);
 $processes = shm_get_var($shm, 23);
 
 // we were called
-$processes[] = 'composer';
+$processes['composer'] = $argv;
 
 // move the fake wpcept in the vendor/bin folder
 copy(__DIR__ . '/wpcept', getcwd() . '/vendor/bin/wpcept');

@@ -61,7 +61,8 @@ Feature: Test that the command will optionally launch Composer and wpcept after 
     Given I'm working on the 'some-theme' theme
     When I run `wp scaffold child-theme some-theme --parent_theme=twentysixteen --theme_name="Some Theme" --author="Your Name" --author_uri="http://example.com" --theme_uri="http://example.com/some-theme"`
     And I run `wp wpb-scaffold theme-tests some-theme` with input
-    Then 'wpcept' should have been called
+    Then 'wpcept' should have been called with '--type=theme'
+    Then 'wpcept' should have been called with '--theme=some-theme'
     Then STDOUT should contain:
     """
     All done

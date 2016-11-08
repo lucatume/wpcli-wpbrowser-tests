@@ -21,7 +21,7 @@ $shm = shm_attach($segment_id,16384,0600);
 $processes = shm_get_var($shm, 23);
 
 // manipulate the value
-$processes[] = 'wpcept';
+$processes['wpcept'] = $argv;
 
 // store the value back in the shared memory segment
 shm_put_var($shm,23,$processes);

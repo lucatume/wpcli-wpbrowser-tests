@@ -352,9 +352,7 @@ abstract class TestScaffold extends \WP_CLI_Command {
 			'adminPath'    => str_replace( home_url(), '', site_url() ) . '/wp-admin',
 		);
 
-		if ( ! empty( $this->pluginFile ) ) {
-			$arguments['plugins'] = basename( dirname( $this->pluginFile ) ) . '/' . basename( $this->pluginFile );
-		}
+		$arguments =array_merge($arguments,$this->getWpceptArguments());
 
 		array_walk(
 			$arguments, function ( &$value, $key ) {
@@ -424,4 +422,6 @@ abstract class TestScaffold extends \WP_CLI_Command {
 	abstract protected function readComponentInformation();
 
 	abstract protected function init();
+
+	abstract protected function getWpceptArguments();
 }

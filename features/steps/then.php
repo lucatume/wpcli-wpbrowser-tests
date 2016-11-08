@@ -271,8 +271,40 @@ $steps->Then( '/^\'([^\']*)\' should have been called$/', function ( $world, $co
 	$shm = shm_attach( $segment, 16384, 0600 );
 	$processes = shm_get_var( $shm, 23 );
 
-	if ( ! in_array( $command, $processes ) ) {
+	if ( ! array_key_exists( $command, $processes ) ) {
 		throw new RuntimeException( $command . ' never ran.' );
+	}
+
+	shm_detach( $shm );
+	sem_release( $sem );
+} );
+
+$steps->Then( '/^\'([^\']*)\' should have been called with \'([^\']*)\'$/', function ( $world, $command, $argument ) {
+	$semaphore = 100;
+	$segment   = 200;
+
+	$sem = sem_get( $semaphore, 1, 0600 );
+
+	$acquired = sem_acquire( $sem );
+	if ( ! $acquired ) {
+		throw new Exception( 'Cannot acquire semaphore' );
+	}
+
+	$shm       = shm_attach( $segment, 16384, 0600 );
+	$processes = shm_get_var( $shm, 23 );
+
+	if ( ! array_key_exists( $command, $processes ) ) {
+		throw new RuntimeException( $command . ' never ran.' );
+	}
+
+	$args = $processes[ $command ];
+
+	if ( empty( $args ) ) {
+		throw new RuntimeException( $command . ' was called without arguments.' );
+	}
+
+	if ( ! in_array( $argument, $processes[ $command ] ) ) {
+		throw new RuntimeException( $command . ' was not called with argument [' . $argument . '].' );
 	}
 
 	shm_detach( $shm );

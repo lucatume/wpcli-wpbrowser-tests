@@ -62,4 +62,10 @@ class ThemeTests extends TestScaffold {
 	protected function init() {
 		$this->stylesheet = $this->args[1];
 	}
+
+	protected function getWpceptArguments() {
+		$arguments = array( 'type' => 'theme', 'theme' => $this->stylesheet );
+
+		return $arguments;
+	}
 }
