@@ -45,12 +45,12 @@ WP_CLI::add_command( 'wpb-scaffold', new Scaffold(), array(
 		),
 		array(
 			'type'     => 'assoc',
-			'name'     => 'dir',
+			'name'     => 'slug',
 			'optional' => true,
 		),
 		array(
 			'type'     => 'assoc',
-			'name'     => 'slug',
+			'name'     => 'dir',
 			'optional' => true,
 		),
 		array(

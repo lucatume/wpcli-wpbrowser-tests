@@ -195,7 +195,7 @@ abstract class TestScaffold extends \WP_CLI_Command {
 	 * @return int
 	 */
 	protected function runInteractiveMode( array $assocArgs ) {
-		if ( ! $this->skipComposerUpdate ) {
+		if ( ! $this->skipComposerUpdate || ( $this->skipComposerUpdate && ! $this->composerFileUpdatedOrCreated ) ) {
 			if ( ! ( $this->promptForComposerUpdate() ) ) {
 				cli::line();
 				$this->printComposerInstructions();
