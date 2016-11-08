@@ -1,5 +1,5 @@
 Feature: Test that the plugin tests bootstrap command will read the target plugin data to fill the composer.json file
-  informatio
+  information
 
   Background:
     Given a WP install

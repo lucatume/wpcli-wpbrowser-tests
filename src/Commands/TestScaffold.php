@@ -52,10 +52,21 @@ abstract class TestScaffold extends \WP_CLI_Command {
 	 * @var bool Whether the command should prompt the user to to install after the scaffold or not.
 	 */
 	protected $noInstall;
+
+	/**
+	 * @var array
+	 */
+	protected $args;
+
 	/**
 	 * @var array
 	 */
 	protected $assocArgs = array();
+
+	/**
+	 * @var bool
+	 */
+	protected $composerFileUpdatedOrCreated = false;
 
 	public function __construct(
 		FileTemplates $fileTemplates = null,
@@ -261,7 +272,7 @@ abstract class TestScaffold extends \WP_CLI_Command {
 	 */
 	protected function createComposerFile( array $assocArgs, $composerJsonFile ) {
 		cli::log( "Creating '{$composerJsonFile}' file" );
-		$composerFileArgs = array_merge( $this->readComponentInformation(), $assocArgs );
+		$composerFileArgs = array_merge( $this->readComponentInformation(), $assocArgs, array( 'type' => $this->scaffoldType ) );
 		$created          = file_put_contents(
 			$composerJsonFile, $this->fileTemplates->getComposerPluginConfig( $composerFileArgs )
 		);

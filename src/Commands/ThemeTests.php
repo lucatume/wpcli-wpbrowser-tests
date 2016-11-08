@@ -24,36 +24,38 @@ class ThemeTests extends TestScaffold {
 	protected function readComponentInformation() {
 		$theme = wp_get_theme( $this->stylesheet );
 
-		$pluginData = $this->getPluginData();
-		if ( empty( $pluginData ) ) {
+		if (!$theme->exists()) {
 			return array();
 		}
 
 		$info = array();
 
-		if ( ! ( empty( $pluginData['AuthorName'] ) && empty( $pluginData['Author'] ) ) ) {
-			$authorName   = ! empty( $pluginData['AuthorName'] ) ? $pluginData['AuthorName'] : $pluginData['Author'];
+
+		if ( ! ( empty( $theme->get( 'Author' ) ) ) ) {
+			$authorName   = $theme->get('Author');
 			$authorSlug   = sanitize_title( $authorName );
-			$pluginSlug   = basename( $this->dir );
-			$info['slug'] = "{$authorSlug}/{$pluginSlug}";
+			$themeSlug   = basename( $this->dir );
+			$info['slug'] = "{$authorSlug}/{$themeSlug}";
 			$info['name'] = $authorName;
 
-			if ( ! empty( $pluginData['AuthorURI'] ) ) {
-				$domain = parse_url( $pluginData['AuthorURI'], PHP_URL_HOST );
+			if ( ! empty( $theme->get('AuthorURI')) ) {
+				$domain = parse_url( $theme->get('AuthorURI'), PHP_URL_HOST );
 				if ( ! empty( $domain ) ) {
 					$info['email'] = str_replace( ' ', '.', strtolower( $authorName ) ) . '@' . $domain;
 				}
 			}
 		}
 
-		if ( ! empty( $pluginData['Description'] ) ) {
-			$info['description'] = $pluginData['Description'];
+		if ( ! empty( $themeData['Description'] ) ) {
+			$info['description'] = $themeData['Description'];
+		} else {
+			$info['description'] = '';
 		}
 
 		return $info;
 	}
 
 	protected function init() {
-		$this->stylesheet = $args[1];
+		$this->stylesheet = $this->args[1];
 	}
 }

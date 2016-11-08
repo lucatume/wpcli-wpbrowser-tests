@@ -234,12 +234,21 @@ $steps->Then(
 );
 
 $steps->Then(
-	'/^the file \'(.+)\' in the \'(.+)\' plugin should contain:$/', function ( $world, $file, $slug, $expected ) {
-	$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/' . $slug;
-	$filePath = $rootDir . '/' . ltrim( $file, '/' );
+	'/^the file \'(.+)\' in the \'(.+)\' (plugin|theme) should contain:$/', function ( $world, $file, $slug, $type, $expected ) {
+	if ( $type === 'plugin' ) {
+		$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/plugins/' . $slug;
+		$filePath = $rootDir . '/' . ltrim( $file, '/' );
 
-	if ( ! file_exists( $filePath ) ) {
-		throw new Exception( "File '{$file}' does not exist in the '{$slug}' plugin folder." );
+		if ( ! file_exists( $filePath ) ) {
+			throw new Exception( "File '{$file}' does not exist in the '{$slug}' plugin folder." );
+		}
+	} else {
+		$rootDir  = $world->variables['RUN_DIR'] . '/wp-content/themes/' . $slug;
+		$filePath = $rootDir . '/' . ltrim( $file, '/' );
+
+		if ( ! file_exists( $filePath ) ) {
+			throw new Exception( "File '{$file}' does not exist in the '{$slug}' themes folder." );
+		}
 	}
 
 	$contents = file_get_contents( $filePath );

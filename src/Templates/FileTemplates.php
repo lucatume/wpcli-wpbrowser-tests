@@ -10,7 +10,7 @@ class FileTemplates {
 {
     "name": "{{slug}}",
     "description": "{{description}}",
-    "type": "wordpress-plugin",
+    "type": "wordpress-{{type}}",
     "minimum-stability": "stable",
     "require-dev": {
         "lucatume/wp-browser": "*"
