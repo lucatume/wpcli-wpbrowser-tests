@@ -6,7 +6,9 @@ if ( ! class_exists( 'WP_CLI' ) ) {
 	return;
 }
 
-require_once 'vendor/autoload.php';
+if(file_exists(__DIR__ . '/vendor/autoload.php')) {
+	require_once 'vendor/autoload.php';
+}
 
 WP_CLI::add_command( 'wpb-scaffold', new Scaffold(), array(
 	'shortdesc' => 'Scaffolds wp-browser based tests for a plugin or theme',
