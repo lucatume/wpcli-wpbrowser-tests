@@ -58,12 +58,8 @@ As any [wp-cli](https://wp-cli.org/ "Command line interface for WordPress - WP-C
 
 ## Installing
 
-The package is still not available through the official installation channel, for the time being use:
-
-```shell
-git clone https://github.com/lucatume/wpcli-wpbrowser-tests.git \
-	~/.wp-cli/packages/vendor/lucatume/wpcli-wpbrowser-tests
-```
+Installing this package requires WP-CLI v0.23.0 or greater. Update to the latest stable release with `wp cli update`.  
+Once you've done so, you can install this package with `wp package install lucatume/wpcli-wpbrowser-tests`.  
 
 ## Contributing
 
